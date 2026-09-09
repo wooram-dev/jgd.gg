@@ -15,7 +15,7 @@
 4. 구현·수정·리뷰 작업이면 [AI_RULES.md](AI_RULES.md)를 읽는다.
 5. 선택한 문서의 관련 Acceptance Criteria와 기존 구현·test를 대조한다.
 
-모든 설계 문서나 전체 작업 로그를 매번 읽지 않는다. 여러 영역에 걸친 작업이면 필요한 문서 목록을 합쳐 읽고, 과거 맥락이 필요할 때만 [WORK_LOG.md](WORK_LOG.md)를 검색한다.
+모든 설계 문서를 매번 읽지 않는다. 여러 영역에 걸친 작업이면 필요한 문서 목록을 합쳐 읽는다. 과거 변경은 Git 이력과 diff로 확인한다.
 
 ## 2. Source of Truth 우선순위
 
@@ -32,7 +32,7 @@
 9. 작업 절차: [AI_RULES.md](AI_RULES.md)
 10. 기존 코드 관례
 
-[STATUS.md](STATUS.md)와 [WORK_LOG.md](WORK_LOG.md)는 운영 상태와 이력이며 요구사항의 Source of Truth가 아니다. 충돌이 실제 요구사항 변경을 뜻하면 담당 문서, 코드와 test를 같은 작업에서 갱신한다.
+[STATUS.md](STATUS.md)와 Git 이력은 운영 상태와 이력이며 요구사항의 Source of Truth가 아니다. 충돌이 실제 요구사항 변경을 뜻하면 담당 문서, 코드와 test를 같은 작업에서 갱신한다.
 
 ## 3. 문서 책임
 
@@ -47,7 +47,6 @@
 | [TESTING.md](TESTING.md) | 테스트 계층, 격리, 필수 시나리오, 품질 게이트 | 기능 요구사항의 원본 |
 | [AI_RULES.md](AI_RULES.md) | AI 개발자의 작업·검증·보고 절차 | 제품·기술 요구사항 자체 |
 | [STATUS.md](STATUS.md) | 현재 구현·환경·blocker·다음 우선순위 | 요구사항과 과거 작업 상세 |
-| [WORK_LOG.md](WORK_LOG.md) | 수행 작업과 실제 검증 결과의 누적 이력 | 현재 요구사항과 설계 결정 |
 | [features/number-click.md](features/number-click.md) | number-click 규칙, 상태 머신, 검증, 수락 기준 | 공통 인증 구현 |
 | [features/ranking.md](features/ranking.md) | 기간, 최고 기록 선정, 정렬, 조회 UX, 수락 기준 | 게임 플레이 상태 |
 
@@ -66,7 +65,7 @@
 | UI·반응형·접근성 | [UI_GUIDE.md](UI_GUIDE.md), 관련 feature 문서, [TESTING.md](TESTING.md) |
 | bug 수정 | 관련 feature 및 API·DB·Auth 문서, [TESTING.md](TESTING.md) |
 | 코드 리뷰 | 변경 영역의 모든 담당 문서와 Acceptance Criteria |
-| Agent 지침·문서 체계 | 이 문서, [AI_RULES.md](AI_RULES.md), [STATUS.md](STATUS.md), 관련 [WORK_LOG.md](WORK_LOG.md) 항목 |
+| Agent 지침·문서 체계 | 이 문서, [AI_RULES.md](AI_RULES.md), [STATUS.md](STATUS.md), 관련 Git 이력 |
 
 ## 5. 변경 절차
 
@@ -76,7 +75,7 @@
 4. 관련 Acceptance Criteria와 테스트 목록을 갱신한다.
 5. [TESTING.md](TESTING.md)의 해당 품질 게이트를 실행한다.
 6. [STATUS.md](STATUS.md)에 영향을 주는 현재 상태가 있으면 갱신한다.
-7. [WORK_LOG.md](WORK_LOG.md)에 실제 수행·검증 결과와 남은 위험을 기록한다.
+7. 변경 내용과 검증 결과를 commit 또는 PR 설명에 정확히 기록한다.
 
 동일 규칙을 여러 문서에 복사하지 않는다. 다른 문서에서 언급해야 하면 담당 문서를 링크하고, 원래 값을 재정의하지 않는 짧은 설명만 둔다.
 
@@ -94,7 +93,6 @@
 ├─ TESTING.md
 ├─ AI_RULES.md
 ├─ STATUS.md
-├─ WORK_LOG.md
 └─ features/
    ├─ number-click.md
    └─ ranking.md

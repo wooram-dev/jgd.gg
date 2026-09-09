@@ -74,7 +74,7 @@
 
 동작이나 계약을 바꾸면 [README.md](README.md)의 문서 책임에 따라 담당 Source of Truth, 코드, consumer와 test를 같은 작업에서 갱신한다. 규칙을 다른 문서에 복제하지 않고 링크와 필요한 맥락만 남긴다.
 
-[STATUS.md](STATUS.md)는 현재 환경·blocker·다음 작업이 바뀔 때 갱신한다. [WORK_LOG.md](WORK_LOG.md)는 모든 저장소 작업의 실제 수행 이력을 기록한다.
+[STATUS.md](STATUS.md)는 현재 환경·blocker·다음 작업이 바뀔 때 갱신한다. 변경 내용과 실제 검증 결과는 commit 또는 PR 설명에 기록한다.
 
 ## 8. Git과 파일 안전
 
@@ -85,37 +85,7 @@
 - formatting은 대상 파일로 제한하고 삭제·rename 전에 참조를 검색한다.
 - 명시적 요청 없이 commit, push, PR 생성 또는 배포하지 않는다.
 
-## 9. 작업 로그
-
-모든 저장소 관련 작업은 완료 전에 [WORK_LOG.md](WORK_LOG.md)의 최신 항목 위에 기록한다. 코드·설계 문서 변경이 없는 분석과 리뷰도 제품 파일은 읽기 전용으로 유지하되 로그에는 확인 범위와 결론을 남긴다.
-
-과거 기록을 삭제하거나 조용히 다시 쓰지 않는다. 사실 오류 정정은 원문을 보존하거나 정정 날짜와 이유를 명시한다. secret, token, cookie, 개인정보와 전체 connection string을 기록하지 않는다.
-
-각 항목은 다음 구조를 사용한다.
-
-~~~text
-## YYYY-MM-DD — 작업 제목
-
-요청
-- 사용자가 요구한 결과
-
-수행
-- 구현·수정·분석 내용
-
-주요 파일
-- 변경하거나 집중 검토한 파일
-
-검증
-- command: PASS | FAIL | BLOCKED | NOT RUN — 필요한 세부 결과
-
-Acceptance Criteria
-- 확인한 AC와 결과
-
-남은 사항
-- 미완료, 위험, blocker, 다음 우선 작업
-~~~
-
-## 10. 최종 보고
+## 9. 최종 보고
 
 사용자에게 다음을 간결히 보고한다.
 
@@ -125,12 +95,12 @@ Acceptance Criteria
 4. Acceptance Criteria 대응 결과
 5. 남은 위험, 미실행 검증과 blocker
 
-## 11. 완료 기준
+## 10. 완료 기준
 
 - 사용자 요청 범위를 충족했다.
 - 관련 Source of Truth와 일치한다.
 - 보안·데이터 불변식과 외부 계약을 유지한다.
 - 필요한 test와 품질 게이트가 통과했다.
-- 필요한 문서, [STATUS.md](STATUS.md)와 [WORK_LOG.md](WORK_LOG.md)를 갱신했다.
+- 필요한 문서와 영향을 받은 경우 [STATUS.md](STATUS.md)를 갱신했다.
 - 범위 밖 변경과 숨긴 실패가 없다.
 - 남은 사항을 정확히 보고했다.

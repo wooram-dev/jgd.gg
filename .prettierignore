@@ -1,0 +1,9 @@
+.next/
+.pnpm-store/
+coverage/
+node_modules/
+playwright-report/
+test-results/
+src/generated/
+pnpm-lock.yaml
+*.md

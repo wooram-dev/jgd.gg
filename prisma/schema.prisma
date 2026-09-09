@@ -1,0 +1,188 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserStatus {
+  ACTIVE
+  BANNED
+
+  @@map("user_status")
+}
+
+enum GameStatus {
+  ACTIVE
+  HIDDEN
+
+  @@map("game_status")
+}
+
+enum ScoreDirection {
+  ASC
+  DESC
+
+  @@map("score_direction")
+}
+
+enum ScoreUnit {
+  MILLISECONDS
+  POINTS
+  COUNT
+
+  @@map("score_unit")
+}
+
+enum GameSessionStatus {
+  READY
+  PLAYING
+  COMPLETED
+  ABANDONED
+  EXPIRED
+  REJECTED
+
+  @@map("game_session_status")
+}
+
+model User {
+  id                 String        @id @default(uuid())
+  name               String
+  email              String        @unique
+  emailVerified      Boolean       @default(false) @map("email_verified")
+  image              String?
+  discordUsername    String        @map("discord_username")
+  discordDisplayName String        @map("discord_display_name")
+  discordAvatarHash  String?       @map("discord_avatar_hash")
+  status             UserStatus    @default(ACTIVE)
+  profileUpdatedAt   DateTime      @default(now()) @map("profile_updated_at") @db.Timestamptz(3)
+  createdAt          DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+  accounts           Account[]
+  sessions           Session[]
+  gameSessions       GameSession[]
+  gameRecords        GameRecord[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(3)
+  token     String   @unique
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id @default(uuid())
+  accountId             String    @map("account_id")
+  providerId            String    @map("provider_id")
+  issuer                String
+  userId                String    @map("user_id")
+  accessToken           String?   @map("access_token")
+  refreshToken          String?   @map("refresh_token")
+  idToken               String?   @map("id_token")
+  accessTokenExpiresAt  DateTime? @map("access_token_expires_at") @db.Timestamptz(3)
+  refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at") @db.Timestamptz(3)
+  scope                  String?
+  password               String?
+  createdAt              DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt              DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  user                   User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([issuer, accountId])
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id @default(uuid())
+  identifier String
+  value      String
+  expiresAt  DateTime @map("expires_at") @db.Timestamptz(3)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([identifier])
+  @@index([expiresAt])
+  @@map("verification")
+}
+
+model Game {
+  id                   String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug                 String         @unique @db.VarChar(64)
+  displayName          String         @map("display_name") @db.VarChar(100)
+  description          String
+  status               GameStatus     @default(ACTIVE)
+  scoreDirection       ScoreDirection @map("score_direction")
+  scoreUnit            ScoreUnit      @map("score_unit")
+  currentRulesVersion  Int            @map("current_rules_version")
+  rankedRulesVersion   Int            @map("ranked_rules_version")
+  createdAt            DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+  sessions             GameSession[]
+  records              GameRecord[]
+
+  @@map("game")
+}
+
+model GameSession {
+  id             String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId         String            @map("user_id")
+  gameId         String            @map("game_id") @db.Uuid
+  status         GameSessionStatus @default(READY)
+  idempotencyKey String            @map("idempotency_key") @db.Uuid
+  rulesVersion   Int               @map("rules_version")
+  rulesSnapshot  Json              @map("rules_snapshot") @db.JsonB
+  challengeData  Json              @map("challenge_data") @db.JsonB
+  createdAt      DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  readyExpiresAt DateTime          @map("ready_expires_at") @db.Timestamptz(3)
+  startedAt      DateTime?         @map("started_at") @db.Timestamptz(3)
+  expiresAt      DateTime?         @map("expires_at") @db.Timestamptz(3)
+  completedAt    DateTime?         @map("completed_at") @db.Timestamptz(3)
+  terminalReason String?           @map("terminal_reason") @db.VarChar(64)
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game           Game              @relation(fields: [gameId], references: [id], onDelete: Restrict)
+  record         GameRecord?
+
+  @@unique([userId, idempotencyKey])
+  @@index([userId, gameId, createdAt(sort: Desc)])
+  @@map("game_session")
+}
+
+model GameRecord {
+  id                String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sessionId         String      @unique @map("session_id") @db.Uuid
+  userId            String      @map("user_id")
+  gameId            String      @map("game_id") @db.Uuid
+  rulesVersion      Int         @map("rules_version")
+  durationMs        Int         @map("duration_ms")
+  mistakeCount      Int         @map("mistake_count")
+  penaltyMs         Int         @map("penalty_ms")
+  scoreValue        Int         @map("score_value")
+  clickCount        Int         @map("click_count")
+  serverElapsedMs   Int         @map("server_elapsed_ms")
+  resultData        Json        @map("result_data") @db.JsonB
+  achievedAt        DateTime    @map("achieved_at") @db.Timestamptz(3)
+  rankEligible      Boolean     @default(true) @map("rank_eligible")
+  invalidatedAt     DateTime?   @map("invalidated_at") @db.Timestamptz(3)
+  invalidatedReason String?     @map("invalidated_reason") @db.VarChar(255)
+  createdAt         DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  session           GameSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game              Game        @relation(fields: [gameId], references: [id], onDelete: Restrict)
+
+  @@index([userId, gameId, achievedAt(sort: Desc)])
+  @@map("game_record")
+}

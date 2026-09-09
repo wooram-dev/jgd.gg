@@ -10,6 +10,51 @@
 - 과거 기록은 보존한다. 사실 오류 정정이 필요하면 정정 날짜와 이유를 남긴다.
 - 각 작업에는 요청, 수행 내용, 주요 파일, 검증, Acceptance Criteria, 남은 사항을 기록한다.
 
+## 2026-09-10 — PostgreSQL 18 로컬 설치
+
+요청
+
+- JGD.GG의 다음 환경 준비 작업으로 PostgreSQL 18을 설치한다.
+
+수행
+
+- PostgreSQL Windows 공식 안내가 연결하는 EDB 설치 프로그램의 최신 18 계열 빌드를 확인하고 PostgreSQL 18.6-3 Windows x64 설치 파일을 내려받았다.
+- 설치 파일의 EnterpriseDB Authenticode 서명과 SHA-256을 확인한 뒤 server와 command-line tools를 무인 설치했다.
+- 첫 설치 시도는 공백이 있는 경로의 argument quoting 문제로 시작 전에 종료됐고, quoting을 바로잡아 재실행해 정상 완료했다.
+- `postgresql-x64-18` 서비스를 자동 시작으로 구성하고 PostgreSQL superuser/service 암호는 저장소 밖 Windows 사용자 레지스트리에 DPAPI 암호문으로만 보관했다.
+- 기본 설치의 `listen_addresses = '*'`를 개발 환경 범위에 맞게 `localhost`로 제한하고 서비스를 재시작했다. host와 replication 접속은 IPv4/IPv6 loopback에서 SCRAM-SHA-256 인증만 허용한다.
+- 새 Windows 터미널에서 `psql`을 바로 사용할 수 있도록 PostgreSQL 18 `bin` 디렉터리를 사용자 PATH에 추가했다.
+- 검증 완료 후 저장소 안의 설치 프로그램 임시 디렉터리를 삭제했다.
+
+주요 파일
+
+- `docs/STATUS.md`
+- `docs/WORK_LOG.md`
+
+검증
+
+- 설치 파일 Authenticode: PASS — EnterpriseDB Corporation의 유효한 서명이다.
+- 설치 파일 SHA-256: PASS — `3BB55A421849FA5749FE807E45B05A9A7758A16389591EE0A41B7FCABF724B90`.
+- 설치 프로그램 종료 코드: PASS — 0.
+- `psql --version`: PASS — PostgreSQL 18.6.
+- Windows service: PASS — `postgresql-x64-18`이 Running이고 Automatic이다.
+- 실제 TCP 접속 및 서버 설정 조회: PASS — 18.6, UTF8, Asia/Seoul, `scram-sha-256`, `localhost`.
+- 5432 listener: PASS — `127.0.0.1`과 `::1`에서만 수신한다.
+- 코드 test 및 build: NOT RUN — 애플리케이션 코드와 계약을 변경하지 않은 로컬 도구 설치 작업이다.
+
+Acceptance Criteria
+
+- 프로젝트 기준 PostgreSQL 18 서버와 CLI를 설치한다: PASS — PostgreSQL 18.6과 `psql`을 설치했다.
+- 재부팅 뒤 사용할 수 있는 로컬 개발 서비스를 구성한다: PASS — Windows 자동 시작 서비스가 실행 중이다.
+- 실제 서버 접속과 핵심 인코딩·인증 설정을 검증한다: PASS — UTF-8 및 SCRAM-SHA-256 접속이 성공했다.
+- secret을 저장소, 로그 또는 응답에 노출하지 않는다: PASS — 암호는 저장소 밖에 DPAPI 암호문으로만 보관했다.
+- 외부 네트워크에 개발 DB를 노출하지 않는다: PASS — listener와 host 인증 범위가 loopback으로 제한됐다.
+
+남은 사항
+
+- 개발 DB와 이름이 `_test`로 끝나는 별도 테스트 DB를 만들고 `.env.example`을 기준으로 로컬 환경 변수를 준비해야 한다.
+- migration과 seed 적용 뒤 DB integration test를 실행해야 한다.
+
 ## 2026-09-09 — Node.js 고정 버전 정렬과 guest E2E 복구
 
 요청

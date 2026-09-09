@@ -1,6 +1,6 @@
 # JGD.GG 현재 상태
 
-기준일: 2026-09-09
+기준일: 2026-09-10
 
 이 문서는 다음 작업을 시작할 때 필요한 현재 구현 상태, 환경 제약과 우선순위를 요약한다. 제품·보안·DB·API 동작의 Source of Truth는 [README.md](README.md)가 안내하는 담당 설계 문서이며, 상세 작업 이력은 [WORK_LOG.md](WORK_LOG.md)에 보존한다.
 
@@ -12,13 +12,14 @@
 
 ## 환경과 미검증 범위
 
-- 실제 PostgreSQL과 Discord OAuth 환경이 없어 migration 적용, DB integration, 실제 로그인과 공식 플레이 E2E는 아직 검증되지 않았다.
+- 로컬 PostgreSQL 18.6 서버가 설치돼 있으며 `postgresql-x64-18` 서비스가 자동 시작된다. 개발 DB와 테스트 DB, 로컬 환경 변수는 아직 준비하지 않았다.
+- 실제 Discord OAuth 환경이 없어 실제 로그인과 공식 플레이 E2E는 아직 검증되지 않았다.
 - Node.js 24.20.0과 pnpm 12.3.4가 프로젝트 고정값에 맞게 준비돼 있다.
 - 로컬 `main` branch가 GitHub의 `origin/main`을 추적한다.
 
 ## 다음 작업 우선순위
 
-1. PostgreSQL 18에 개발 DB와 이름이 `_test`로 끝나는 별도 테스트 DB를 준비한다.
+1. PostgreSQL 18에 개발 DB와 이름이 `_test`로 끝나는 별도 테스트 DB를 만든다.
 2. `.env.example`을 기준으로 로컬 환경을 설정하되 secret과 실제 값을 저장소에 기록하거나 commit하지 않는다.
 3. `pnpm db:deploy`, `pnpm db:seed`를 실행해 migration과 seed를 실제 검증한다.
 4. `DATABASE_URL_TEST`와 `ALLOW_TEST_DATABASE_RESET=true`로 `pnpm test:integration`을 실행한다.

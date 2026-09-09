@@ -10,6 +10,62 @@
 - 과거 기록은 보존한다. 사실 오류 정정이 필요하면 정정 날짜와 이유를 남긴다.
 - 각 작업에는 요청, 수행 내용, 주요 파일, 검증, Acceptance Criteria, 남은 사항을 기록한다.
 
+## 2026-09-09 — Node.js 고정 버전 정렬과 guest E2E 복구
+
+요청
+
+- Git 저장소 연동 뒤 현재 우선순위의 다음 작업을 진행한다.
+- 완료된 변경을 commit하고 `origin/main`으로 push한다.
+
+수행
+
+- 로컬 `main`이 GitHub `origin/main`을 추적하고 두 commit이 일치하는 것을 확인했다.
+- 공식 Node.js Windows x64 ZIP과 `SHASUMS256.txt`를 내려받아 SHA-256을 검증한 뒤 사용자 로컬 Node.js를 24.18.0에서 프로젝트 고정값 24.20.0으로 교체했다.
+- 기존 Node.js 24.18.0 설치 폴더는 복구 가능한 버전명 backup으로 보존하고, 새 설치에서 Corepack pnpm 12.3.4를 활성화했다.
+- 생성 파일 `tsconfig.tsbuildinfo`를 로컬에는 보존하면서 Git 추적에서 제외하고 `.gitignore`에 `*.tsbuildinfo`를 추가했다.
+- Node 전환 뒤 guest E2E에서 Client Component hydration 실패를 재현하고 Playwright trace와 Next 개발 로그를 진단했다.
+- Next.js 16.3.4가 테스트 origin `127.0.0.1`의 개발 자산 요청을 차단한 것이 원인이어서 `allowedDevOrigins`에 해당 host를 명시했다.
+- Playwright가 Windows에서 `pnpm` 자식 Next 서버를 남기거나 기존 서버를 재사용하지 않도록 Next CLI를 Node로 직접 실행하고 `reuseExistingServer`를 비활성화했다.
+- 진단 중 시도한 hydration 대기 제품 코드는 원인이 아닌 것으로 확인해 모두 되돌렸으며, 제품 컴포넌트에는 변경을 남기지 않았다.
+- 현재 상태 문서에서 Git과 Node blocker를 완료 상태로 바꾸고 PostgreSQL 준비를 다음 우선 작업으로 올렸다.
+- 사용자가 저장소에서 제외해 로컬 untracked로 보존한 설계 프롬프트 파일은 변경하지 않았다.
+- 검증된 변경만 commit해 `origin/main`으로 push한다.
+
+주요 파일
+
+- `.gitignore`
+- `next.config.ts`
+- `docs/STATUS.md`
+- `docs/WORK_LOG.md`
+
+검증
+
+- Node.js 공식 배포본 SHA-256 대조: PASS — Windows x64 ZIP이 공식 checksum과 일치했다.
+- `node --version`: PASS — v24.20.0.
+- `pnpm --version`: PASS — 12.3.4.
+- `pnpm lint`: PASS.
+- `pnpm format:check`: PASS.
+- process 한정 예시 `DATABASE_URL`을 사용한 `pnpm typecheck`: PASS.
+- `pnpm test`: PASS — 11 files, 102 tests.
+- `pnpm test:coverage`: PASS — statements 98.77%, branches 92.78%, functions 100%, lines 98.69%.
+- `pnpm test:e2e`: 최초 FAIL — `127.0.0.1`의 `/_next/hmr` 요청이 Next 개발 서버에서 차단돼 완료 흐름 3건이 hydrate되지 않았다.
+- `allowedDevOrigins` 수정 후 `pnpm test:e2e`: PASS — desktop/mobile/compact 6 tests.
+- E2E 종료 후 localhost 3000 listener 확인: PASS — 남은 개발 서버가 없다.
+- process 한정 build용 예시 환경값을 사용한 `pnpm build`: PASS.
+- `pnpm test:integration`: NOT RUN — PostgreSQL과 `DATABASE_URL_TEST`가 아직 없다.
+
+Acceptance Criteria
+
+- Architecture AC: dependency와 Node/pnpm 버전이 metadata의 고정값과 일치한다: PASS.
+- Product/UI AC: guest 연습과 320/390/1280 viewport 핵심 E2E가 통과한다: PASS.
+- Next 개발 자산 요청은 테스트 origin에서만 추가 허용되고 production 계약은 바꾸지 않는다: PASS.
+- 사용자 변경과 비밀값을 보존한다: PASS — untracked 설계 프롬프트를 건드리지 않았고 실제 `.env`를 만들지 않았다.
+
+남은 사항
+
+- PostgreSQL 18 개발 DB와 이름이 `_test`로 끝나는 별도 테스트 DB를 준비하는 것이 다음 작업이다.
+- 기존 Node.js backup은 `C:\Users\jung8\AppData\Local\Programs\nodejs-backup-v24.18.0-20260909`에 남아 있다.
+
 ## 2026-09-09 — 다음 작업과 Git 선행 여부 점검
 
 요청

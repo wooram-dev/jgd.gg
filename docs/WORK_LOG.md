@@ -10,6 +10,52 @@
 - 과거 기록은 보존한다. 사실 오류 정정이 필요하면 정정 날짜와 이유를 남긴다.
 - 각 작업에는 요청, 수행 내용, 주요 파일, 검증, Acceptance Criteria, 남은 사항을 기록한다.
 
+## 2026-09-10 — 로컬 개발·테스트 DB 준비
+
+요청
+
+- PostgreSQL 18에 JGD.GG 개발 DB와 별도 테스트 DB를 준비한다.
+
+수행
+
+- 비관리자 애플리케이션 역할 `jgd`를 만들고 로컬 전용 임의 암호를 설정했다.
+- 개발 DB `jgd`와 이름이 `_test`로 끝나는 테스트 DB `jgd_test`를 만들고 `jgd` 역할을 소유자로 지정했다.
+- 두 DB의 기본 timezone을 UTC로 설정하고 UTF-8 인코딩을 확인했다.
+- `.env.example`을 기준으로 Git에서 제외되는 `.env`를 만들었다. DB·Better Auth용 로컬 임의 secret, 별도 테스트 DB URL과 `ALLOW_TEST_DATABASE_RESET=true`를 구성했으며 Discord 값은 명시적인 교체용 placeholder로 유지했다.
+- 관리자 암호를 노출하지 않고 DB를 생성하기 위해 loopback의 `postgres` 계정만 대상으로 인증을 일시 허용했으며, 생성 직후 기존 loopback SCRAM-SHA-256 규칙으로 복구하고 서비스를 재시작했다.
+- DB 준비에 사용한 임시 관리자 스크립트와 진단 파일은 제거했다.
+
+주요 파일
+
+- `.env` — Git 제외 로컬 환경 파일
+- `docs/STATUS.md`
+- `docs/WORK_LOG.md`
+
+검증
+
+- 개발 DB 접속: PASS — `jgd` 역할로 `jgd`에 접속했으며 UTF8, UTC다.
+- 테스트 DB 접속: PASS — `jgd` 역할로 `jgd_test`에 접속했으며 UTF8, UTC다.
+- 역할 권한 조회: PASS — `jgd`는 superuser, createdb, createrole, replication 권한이 모두 없다.
+- 테스트 DB 안전 설정: PASS — 개발·테스트 URL이 다르고 테스트 DB 이름이 `_test`로 끝나며 reset 명시 플래그가 true다.
+- `git check-ignore .env`: PASS — 로컬 secret 파일이 Git에서 제외된다.
+- `pg_hba.conf` 확인: PASS — IPv4·IPv6 loopback과 replication host 인증이 SCRAM-SHA-256으로 복구됐다.
+- Windows service 확인: PASS — `postgresql-x64-18`이 Running이고 Automatic이다.
+- migration, seed 및 코드 test: NOT RUN — 이번 작업은 빈 로컬 DB와 환경 준비까지이며 다음 우선 작업에서 실행한다.
+
+Acceptance Criteria
+
+- 개발 DB와 별도 테스트 DB를 만든다: PASS — `jgd`, `jgd_test`를 생성했다.
+- 테스트 DB 이름은 reset 안전 규칙에 맞게 `_test`로 끝난다: PASS.
+- 애플리케이션은 관리자 역할로 접속하지 않는다: PASS — 제한된 `jgd` 역할을 사용한다.
+- secret과 실제 연결 문자열을 저장소 이력이나 출력에 노출하지 않는다: PASS — 무시되는 `.env`에만 저장했다.
+- PostgreSQL 로컬 인증 보안을 유지한다: PASS — 임시 규칙을 제거하고 SCRAM-SHA-256을 확인했다.
+
+남은 사항
+
+- 개발 DB에 migration과 number-click seed를 적용해야 한다.
+- 테스트 DB migration 적용과 integration test 실행이 필요하다.
+- 실제 Discord OAuth 검증 전 `.env`의 Discord placeholder를 실제 application 값으로 교체해야 한다.
+
 ## 2026-09-10 — PostgreSQL 18 로컬 설치
 
 요청

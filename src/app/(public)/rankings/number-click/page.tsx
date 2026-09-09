@@ -25,7 +25,7 @@ export default async function RankingPage({
   const period = requestedPeriod;
   const viewer = await getPageViewer();
   let initialData: Awaited<ReturnType<typeof getNumberClickRanking>> = null;
-  let initialLoadFailed = false;
+  let initialLoadFailed = true;
   if (hasServerEnv()) {
     try {
       initialData = await getNumberClickRanking(getDatabase(), {
@@ -34,6 +34,7 @@ export default async function RankingPage({
         offset: 0,
         viewerId: viewer?.id ?? null,
       });
+      initialLoadFailed = false;
     } catch (error) {
       initialData = null;
       initialLoadFailed = true;
@@ -54,7 +55,11 @@ export default async function RankingPage({
         <h1>숫자 게임 랭킹</h1>
         <p>기간마다 각 사용자의 가장 좋은 기록 한 건만 반영됩니다.</p>
       </header>
-      <RankingView initialData={initialData} initialLoadFailed={initialLoadFailed} />
+      <RankingView
+        initialData={initialData}
+        initialLoadFailed={initialLoadFailed}
+        initialPeriod={period}
+      />
     </div>
   );
 }

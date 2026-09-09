@@ -162,6 +162,12 @@ coverage gate:
 
 ## 9. Component test 기준
 
+라운지:
+
+- KST 자정의 주제 변경과 같은 날짜의 일관성, 14일 주기
+- 대화 종류 선택, 선택한 내용 복사, 성공 상태 초기화, 클립보드 거부 시 직접 복사
+- 커뮤니티 기록의 연결 전·실패·실제 빈 목록 구분, 재시도와 응답 schema 검증
+
 number-click:
 
 - 각 상태의 action과 disabled
@@ -238,6 +244,13 @@ AUTH.md의 테스트 절을 모두 포함한다.
 
 ### 11.1 Guest
 
+라운지 추가 흐름 (`tests/e2e/lounge.spec.ts`):
+
+- 홈에서 오늘의 이야기 → 주제 종류 변경 → 복사 → 주간 랭킹 이동
+- desktop/mobile/compact 메뉴 이동과 모바일 메뉴 닫기
+- 320px/390px/1280px 가로 overflow, 본문 건너뛰기, reduced motion, 이용 가이드 펼침
+- 클립보드 E2E는 브라우저 API를 대체해 전달 내용을 확인한다. 실제 권한 허용/거부는 component와 별도 브라우저 QA로 확인한다.
+
 1. /games/number-click 접속
 2. 연습 시작
 3. board 완료
@@ -295,6 +308,21 @@ AUTH.md의 테스트 절을 모두 포함한다.
 - 두 tab에서 공식 시작과 이전 tab 완료
 
 수동 QA 결과는 날짜, 환경, browser, pass/fail, issue link로 남긴다.
+
+### 라운지 UI QA — 2026-09-10
+
+Windows 로컬 개발 서버, Playwright Chromium에서 확인했다. 기록 목록의 운영 데이터와 실제 OAuth 검증을 대신하지 않는다.
+
+| 시나리오 | 결과 | 범위 |
+|---|---|---|
+| 320×700 / 390×844 / 1280×800 | PASS | 라운지 탐색·복사, 주간 진입, 메뉴 닫기, 연습 완료, 가로 넘침·보드 44px |
+| 768×1024 / 1440×900 | PASS | 화면 캡처와 실제 레이아웃 확인 |
+| 200% CSS 확대 | PASS | container query로 콘텐츠 재배치, 중앙·보조 열 겹침 방지; 브라우저 자체 zoom 검증은 별도 |
+| 키보드 / reduced motion | PASS | 본문 건너뛰기, 게임 핵심 테스트, 비필수 모션 축소 |
+| 실제 클립보드 | PASS | 격리된 Chromium의 권한 허용 후 복사 문자열 일치 |
+| 실제 Discord 로그인·공식 기록 | NOT RUN | OAuth 환경과 DB migration·seed 준비가 필요 |
+
+로컬 3000 포트의 기존 개발 서버가 실행 중이면 기본 E2E 명령은 포트 충돌로 중단된다. 이번 QA는 Git 제외된 임시 Playwright 설정에서 `reuseExistingServer: true`로 해당 서버를 사용했으며 저장소의 기본 서버 격리 설정은 유지했다.
 
 ## 13. 성능 test
 

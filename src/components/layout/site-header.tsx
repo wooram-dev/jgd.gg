@@ -4,6 +4,8 @@ import { getPageViewer } from "@/lib/auth/page-viewer";
 
 import { Avatar } from "../ui/avatar";
 import { SignOutButton } from "../ui/auth-button";
+import { DiscordIcon } from "../ui/icon";
+import { SiteNavigation } from "./site-navigation";
 
 export async function SiteHeader() {
   const viewer = await getPageViewer();
@@ -12,12 +14,12 @@ export async function SiteHeader() {
     <header className="site-header">
       <div className="header-inner">
         <Link className="wordmark" href="/">
+          <span className="brand-symbol" aria-hidden="true">
+            j.
+          </span>
           JGD<span>.GG</span>
         </Link>
-        <nav className="desktop-nav" aria-label="주요 메뉴">
-          <Link href="/games/number-click">게임</Link>
-          <Link href="/rankings/number-click">랭킹</Link>
-        </nav>
+        <span className="header-tagline">게임으로 만나, 일상으로 이어지는 곳</span>
         <div className="account-nav">
           {viewer ? (
             <>
@@ -29,25 +31,14 @@ export async function SiteHeader() {
             </>
           ) : (
             <Link className="header-login" href="/login">
-              Discord로 로그인
+              <DiscordIcon />{" "}
+              <span>
+                <span className="login-prefix">Discord로 </span>로그인
+              </span>
             </Link>
           )}
         </div>
-        <details className="mobile-menu">
-          <summary aria-label="메뉴 열기">메뉴</summary>
-          <nav aria-label="모바일 메뉴">
-            <Link href="/games/number-click">게임</Link>
-            <Link href="/rankings/number-click">랭킹</Link>
-            {viewer ? (
-              <>
-                <Link href="/me">내 기록</Link>
-                <SignOutButton />
-              </>
-            ) : (
-              <Link href="/login">로그인</Link>
-            )}
-          </nav>
-        </details>
+        <SiteNavigation mobile />
       </div>
     </header>
   );

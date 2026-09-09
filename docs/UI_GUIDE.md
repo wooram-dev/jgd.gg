@@ -4,6 +4,7 @@
 
 ## 1. UX 원칙
 
+- 홈은 커뮤니티 라운지다. 오늘의 이야기, 멤버 기록과 개인 영역 탐색을 먼저 제공하고 미니게임은 보조 활동으로 배치한다.
 - 사용자는 게임 규칙을 10초 안에 이해하고 두 번 이내의 입력으로 플레이를 시작한다.
 - 한 판 종료 후 페이지 이동 없이 다시 한다.
 - 공식 기록과 연습 기록을 혼동시키지 않는다.
@@ -14,7 +15,7 @@
 
 ## 2. 시각 방향
 
-어두운 gaming community 분위기를 사용하되 과도한 neon, particle, parallax는 쓰지 않는다.
+차분한 차콜 배경, 라벤더 강조와 따뜻한 라운지 일러스트로 편안한 커뮤니티 분위기를 만든다. 과도한 neon, particle, parallax는 쓰지 않는다.
 
 ### 2.1 CSS token
 
@@ -22,18 +23,23 @@ Tailwind 4의 CSS-first theme 변수로 다음 semantic token을 만든다. comp
 
 | token | 기준 색 | 용도 |
 |---|---|---|
-| color-bg | #0B0D12 | 전체 배경 |
-| color-surface | #151923 | card |
-| color-surface-raised | #1D2330 | hover·강조 |
-| color-border | #2B3344 | 구분선 |
+| color-bg | #101116 | 전체 배경 |
+| color-surface | #191A21 | card |
+| color-surface-raised | #23242E | hover·강조 |
+| color-border | #30313C | 장식 구분선 (입력 상태는 추가 대비 제공) |
 | color-text | #F5F7FA | 본문 주요 |
-| color-text-muted | #A7B0C0 | 보조 |
-| color-primary | #5865F2 | Discord 연계 CTA |
-| color-primary-hover | #4752C4 | CTA hover |
+| color-text-muted | #AAABBA | 보조 |
+| color-primary | #665CCF | Discord 연계 CTA |
+| color-primary-hover | #574EB7 | CTA hover |
 | color-success | #2FBF71 | 개인 최고·완료 |
 | color-warning | #F4B942 | 페널티 |
 | color-danger | #EF5B5B | 오클릭·오류 |
-| color-focus | #8EA1FF | focus ring |
+| color-focus | #B6AAFF | focus ring·라벤더 강조 |
+| color-hero | #C4B5E9 | 라운지 welcome banner |
+| color-hero-text | #29213B | banner 제목·CTA 배경 |
+| color-hero-muted | #514463 | banner 본문 |
+| color-peach | #E7B798 | 오늘 기록 아이콘 |
+| color-mint | #A5CDBB | 주간 랭킹 강조 |
 
 색상 대비는 WCAG AA를 만족해야 한다. 작은 일반 텍스트는 4.5:1, 큰 텍스트와 UI 경계는 최소 3:1을 목표로 한다.
 
@@ -48,7 +54,7 @@ Tailwind 4의 CSS-first theme 변수로 다음 semantic token을 만든다. comp
 
 ### 2.3 Shape와 motion
 
-- card radius: 16px
+- card radius: 일반 16px, 라운지 콘텐츠 13px
 - button radius: 12px
 - cell radius: 10px
 - focus ring: 3px, 2px offset
@@ -60,12 +66,13 @@ Tailwind 4의 CSS-first theme 변수로 다음 semantic token을 만든다. comp
 
 ### 3.1 Header
 
-- 높이: 모바일 56px, sm 이상 64px
+- 높이: 모바일 64px, 768px 이상 72px
 - 왼쪽: JGD.GG wordmark, 클릭 시 /
-- 중앙/데스크톱: 게임, 랭킹
+- 중앙/데스크톱: 커뮤니티 소개 문구
 - 오른쪽 비로그인: Discord로 로그인
 - 오른쪽 로그인: avatar + displayName, 내 기록, 로그아웃
-- 768px 미만에서 nav는 menu button으로 축약한다.
+- 1100px 이상에서는 왼쪽에 라운지, 커뮤니티 랭킹, 미니게임, 내 기록과 홈 콘텐츠 바로가기 메뉴를 둔다. 현재 경로는 aria-current로 표시한다.
+- 1100px 미만에서 nav는 header menu button으로 축약하고 이동 시 닫는다. 로그인 진입은 작은 화면에도 유지한다.
 - header는 gameplay 중에도 보이지만 sticky로 보드를 가리지 않는다. 기본 static이다.
 
 ### 3.2 Main
@@ -73,11 +80,13 @@ Tailwind 4의 CSS-first theme 변수로 다음 semantic token을 만든다. comp
 - 모바일 좌우 padding 16px
 - sm 24px
 - lg 32px
-- 일반 콘텐츠 max-width 1120px
+- 전체 shell max-width 1488px, 데스크톱 sidebar 204px, 일반 콘텐츠 max-width 1180px
 - 게임 집중 column max-width 720px
 - 상단과 하단 최소 padding 24px/40px
 
-MVP에 빈 광고 영역을 예약하지 않는다. 향후 1280px 이상에서 main 외부 aside를 추가할 수 있지만 콘텐츠 중심축과 보드 크기를 바꾸지 않는다.
+라운지는 768px 이상에서 중앙 콘텐츠와 272px 보조 열을 사용한다 (1100~1199px에서는 244px). 작은 화면에서는 대화 → 기록 → 미니게임 → 개인 영역·가이드 순으로 쌓는다. 게임 페이지는 중앙 집중 column과 기존 보드 규격을 유지한다. 빈 광고 영역을 예약하지 않는다.
+
+viewport뿐 아니라 main의 실제 콘텐츠 너비도 container query로 확인한다. 확대 등으로 콘텐츠가 700px 이하가 되면 라운지를 한 열로 배치하고, 520px 이하에서는 개인 영역도 한 열로 배치한다.
 
 ### 3.3 Footer
 
@@ -90,15 +99,16 @@ MVP에 빈 광고 영역을 예약하지 않는다. 향후 1280px 이상에서 m
 
 위에서 아래 순서:
 
-1. 제목: 짧게 즐기고, 기록으로 경쟁하세요.
-2. 설명 한 문단
-3. primary CTA: 숫자 게임 시작
-4. 비로그인이면 secondary CTA: Discord로 로그인
-5. 활성 게임 card: 이름, 10~30초 설명, 플레이
-6. 오늘 TOP 5: 순위, avatar, displayName, 최종 기록
-7. 전체 랭킹 링크
+1. 제목: 우리들의 라운지. KST 날짜와 환영 문구
+2. 라운지 일러스트 배너: 별일 없어도, 들렀다 가요. CTA는 오늘의 이야기 만나기
+3. 오늘의 대화 한 조각: 가벼운 수다·게임 이야기 선택, 질문과 복사 버튼
+4. 오늘의 기록: 실제 TOP 5, 오클릭과 최종 기록, 전체 랭킹 진입
+5. 기다리는 동안, 잠깐 한 판: 기존 number-click 진입
+6. 보조 열: 비로그인 Discord 연결 안내 또는 로그인 사용자 프로필·내 기록, 주간 랭킹, 펼칠 수 있는 이용 가이드
 
-데이터 로딩 실패 시 페이지 전체를 실패시키지 않고 오늘 TOP 5 위치에 재시도 가능한 오류 card를 표시한다.
+대화 주제는 로그인 없이 제공한다. KST 날짜마다 정해진 두 종류의 주제를 사용하고 각 종류의 14개 편집 주제를 순환한다. 자정을 넘겨 열린 페이지는 다음 홈 접속·새로고침 때 갱신한다. 복사는 사용자의 클릭으로만 실행하며 성공/실패를 live region으로 안내한다. 클립보드 권한이 없으면 read-only textarea에서 직접 복사할 수 있다. Discord 메시지 전송이나 서버 초대 기능으로 표시하지 않는다.
+
+데이터 로딩 실패 시 오늘의 기록 card에 다시 불러오기 버튼을 표시한다. 서버 환경 연결 전, 요청 실패, 조회 성공 후 빈 목록은 다른 상태다. 가상의 게시글·멤버 수·알림을 표시하지 않는다. 조회 재시도는 기존 공개 API의 no-store·schema 검증을 따른다.
 
 ### 4.2 로그인 /login
 
@@ -233,6 +243,7 @@ UI 내부 보조 상태다. FINISHED와 구분해 이중 제출을 막는다.
 - 오늘, 이번 주, 전체
 - 기본 오늘
 - URL query period와 동기화해 새로고침·공유 가능
+- 초기 데이터 조회가 실패해도 URL에서 선택한 기간을 유지하고 같은 기간의 다시 불러오기를 제공한다. 실패를 빈 기록으로 표시하지 않는다.
 - tab은 keyboard arrow 이동과 aria-selected를 지원
 - 탭 변경 시 기존 목록을 유지한 채 loading overlay를 사용하지 말고 skeleton row 또는 상단 progress를 표시한다.
 
@@ -328,6 +339,9 @@ Playwright 필수 E2E는 390×844와 1280×800이다. 320px은 component/visual 
 
 ## 13. UI Acceptance Criteria
 
+- [ ] 라운지의 첫 CTA는 대화 콘텐츠로 이동하며 미니게임은 보조 영역에 있다.
+- [ ] 모바일 메뉴가 실제 경로로 이동한 후 닫히며 본문 건너뛰기와 현재 위치 표시를 제공한다.
+- [ ] 대화 주제 선택·복사·권한 거부 복구와 기록 조회의 오류·빈 상태 구분을 검증한다.
 - [ ] 모든 상태 IDLE, READY, PLAYING, SUBMITTING, FINISHED, ERROR가 시각·입력상 구분된다.
 - [ ] 320px에서 board가 가로로 잘리지 않고 cell이 44px 이상이다.
 - [ ] 완료한 숫자는 제거되지 않고 완료 상태로 남는다.

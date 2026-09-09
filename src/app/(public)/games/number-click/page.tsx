@@ -27,7 +27,7 @@ export default async function NumberClickPage() {
   return (
     <div className="game-page page-stack narrow-page">
       <header className="page-heading">
-        <p className="eyebrow">NUMBER CLICK · RULES V1</p>
+        <p className="eyebrow">MINI GAME · NUMBER CLICK</p>
         <h1>숫자 순서대로 누르기</h1>
         <p>1부터 25까지 순서대로 누르세요. 오클릭마다 0.50초가 추가됩니다.</p>
       </header>

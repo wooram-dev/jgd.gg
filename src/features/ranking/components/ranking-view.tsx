@@ -18,11 +18,13 @@ const PERIODS: { key: PeriodKey; label: string }[] = [
 export function RankingView({
   initialData,
   initialLoadFailed = false,
+  initialPeriod = "today",
 }: {
   initialData: RankingData | null;
   initialLoadFailed?: boolean;
+  initialPeriod?: PeriodKey;
 }) {
-  const [period, setPeriod] = useState<PeriodKey>(initialData?.period.key ?? "today");
+  const [period, setPeriod] = useState<PeriodKey>(initialData?.period.key ?? initialPeriod);
   const [data, setData] = useState(initialData);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(
@@ -31,7 +33,7 @@ export function RankingView({
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   async function selectPeriod(nextPeriod: PeriodKey): Promise<void> {
-    if (nextPeriod === period && data) return;
+    if (nextPeriod === period && data && !error) return;
     setPeriod(nextPeriod);
     setLoading(true);
     setError(null);
@@ -95,6 +97,14 @@ export function RankingView({
       {error ? (
         <div className="inline-error" role="alert">
           {error}
+          <button
+            className="button button-secondary"
+            type="button"
+            onClick={() => void selectPeriod(period)}
+            disabled={loading}
+          >
+            다시 불러오기
+          </button>
         </div>
       ) : null}
 
@@ -137,14 +147,14 @@ export function RankingView({
             </tbody>
           </table>
         </div>
-      ) : (
+      ) : data && !error && !loading ? (
         <div className="empty-card">
           <p>아직 이 기간의 기록이 없습니다. 첫 기록에 도전해 보세요.</p>
           <Link className="button button-primary" href="/games/number-click">
             게임 시작
           </Link>
         </div>
-      )}
+      ) : null}
 
       {viewerOutsideItems ? (
         <div className="viewer-rank-card">

@@ -44,6 +44,27 @@ afterEach(() => {
 });
 
 describe("RankingView", () => {
+  it("주간 링크의 초기 조회가 실패해도 주간 선택을 유지하고 빈 기록 대신 재시도를 제공한다", async () => {
+    const user = userEvent.setup();
+    const weekData = { ...initialData, period: { ...initialData.period, key: "week" } };
+    const fetch = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ data: weekData, meta: { requestId: "retry-week" } }), {
+        status: 200,
+      }),
+    );
+    render(<RankingView initialData={null} initialLoadFailed initialPeriod="week" />);
+    expect(screen.getByRole("tab", { name: "이번 주", selected: true })).toBeVisible();
+    expect(
+      screen.queryByText("아직 이 기간의 기록이 없습니다. 첫 기록에 도전해 보세요."),
+    ).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "다시 불러오기" }));
+    expect(fetch).toHaveBeenCalledWith(expect.stringContaining("period=week"), {
+      cache: "no-store",
+    });
+    expect(await screen.findByText("9.83초")).toBeVisible();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
   it("KST label, 긴 이름, top 100 밖 viewer card를 표시한다", () => {
     render(<RankingView initialData={initialData} />);
 

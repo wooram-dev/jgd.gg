@@ -13,6 +13,12 @@ if (!databaseUrlTest || !authSecretTest) {
   throw new Error("DATABASE_URL_TEST and BETTER_AUTH_SECRET_TEST are required for E2E tests.");
 }
 
+const e2ePort = process.env.E2E_PORT ?? "3000";
+if (!/^[1-9]\d{0,4}$/.test(e2ePort) || Number(e2ePort) > 65_535) {
+  throw new Error("E2E_PORT must be a valid TCP port number.");
+}
+
+const e2eOrigin = `http://127.0.0.1:${e2ePort}`;
 const serverEnvironment = Object.fromEntries(
   Object.entries(process.env).filter((entry): entry is [string, string] => entry[1] !== undefined),
 );
@@ -21,7 +27,7 @@ Object.assign(serverEnvironment, {
   DATABASE_URL: databaseUrlTest,
   DIRECT_DATABASE_URL: databaseUrlTest,
   BETTER_AUTH_SECRET: authSecretTest,
-  BETTER_AUTH_URL: "http://127.0.0.1:3000",
+  BETTER_AUTH_URL: e2eOrigin,
   DISCORD_CLIENT_ID: "mock-discord-client",
   DISCORD_CLIENT_SECRET: "mock-discord-secret",
   E2E_AUTH_MODE: "mock-discord",
@@ -35,16 +41,19 @@ export default defineConfig({
   reporter: "list",
   globalSetup: "./tests/helpers/e2e-global-setup.ts",
   use: {
-    baseURL: "http://127.0.0.1:3000",
+    baseURL: e2eOrigin,
     trace: "retain-on-failure",
   },
-  webServer: {
-    command: "node node_modules/next/dist/bin/next dev --hostname 127.0.0.1",
-    url: "http://127.0.0.1:3000/games/number-click",
-    env: serverEnvironment,
-    reuseExistingServer: false,
-    timeout: 120_000,
-  },
+  webServer:
+    process.env.E2E_EXTERNAL_SERVER === "true"
+      ? undefined
+      : {
+          command: `node node_modules/next/dist/bin/next dev --hostname 127.0.0.1 --port ${e2ePort}`,
+          url: `${e2eOrigin}/games/number-click`,
+          env: serverEnvironment,
+          reuseExistingServer: false,
+          timeout: 120_000,
+        },
   projects: [
     {
       name: "desktop-chromium",

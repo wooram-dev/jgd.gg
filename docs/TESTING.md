@@ -62,6 +62,7 @@ unit test를 실제 코드에서 멀리 떨어뜨리지 않는다. cross-feature
 | BETTER_AUTH_SECRET_TEST | test 전용 고정 secret |
 | BETTER_AUTH_URL | E2E server origin |
 | E2E_AUTH_MODE | test에서만 mock-discord |
+| E2E_PORT | E2E 전용 Next.js server port, 기본 3000 |
 | ALLOW_TEST_DATABASE_RESET | 명시적 true일 때만 test DB 초기화 |
 
 안전장치:
@@ -72,6 +73,7 @@ unit test를 실제 코드에서 멀리 떨어뜨리지 않는다. cross-feature
 - database 이름이 _test 또는 _test_worker_N suffix가 아니면 reset을 거부한다.
 - DATABASE_URL과 DATABASE_URL_TEST가 같으면 즉시 실패한다.
 - test output에 secret이나 전체 connection string을 출력하지 않는다.
+- 기존 개발 server와 병렬 실행이 필요하면 `E2E_PORT`에 비점유 port를 지정한다. `pnpm test:e2e`는 `.next-e2e` build output의 전용 Next.js server를 직접 시작하고, 실행 완료·실패·중단 후에는 그 process tree만 종료하므로 개발 server의 `.next` lock과 공유하지 않는다.
 
 ## 5. DB 격리
 
@@ -320,7 +322,10 @@ Windows 로컬 개발 서버, Playwright Chromium에서 확인했다. 기록 목
 | 200% CSS 확대 | PASS | container query로 콘텐츠 재배치, 중앙·보조 열 겹침 방지; 브라우저 자체 zoom 검증은 별도 |
 | 키보드 / reduced motion | PASS | 본문 건너뛰기, 게임 핵심 테스트, 비필수 모션 축소 |
 | 실제 클립보드 | PASS | 격리된 Chromium의 권한 허용 후 복사 문자열 일치 |
-| 실제 Discord 로그인·공식 기록 | NOT RUN | OAuth 환경과 DB migration·seed 준비가 필요 |
+| 실제 Discord 로그인·공식 기록 | PASS (2026-09-11) | 로컬 `http://localhost:3000`, Codex in-app browser에서 실제 계정의 공식 플레이 완료와 개인 최고·오늘·주간·전체 랭킹 반영 확인 |
+| 실제 Discord 로그인 취소·로그아웃·프로필 갱신 | USER-REPORTED (2026-09-11) | 사용자가 수동 QA 수행을 보고함; pass/fail 및 브라우저별 세부 결과는 별도 기록 필요 |
+| 로그인 후 keyboard-only 공식 흐름 | PASS (2026-09-12) | 로컬 `http://localhost:3000`, Codex in-app browser의 기존 인증 세션에서 게임 시작과 1~25 입력을 Enter로 완료했다. 결과 heading으로 focus가 이동하고 개인 최고·오늘·주간·전체 순위가 표시됐다. |
+| 실제 브라우저 200% zoom | BLOCKED (2026-09-12) | Codex in-app browser에서 확대 단축키가 유효 viewport를 변경하지 않아 검증할 수 없었다. Chrome/Edge 또는 지원 브라우저에서 별도 확인이 필요하다. |
 
 로컬 3000 포트의 기존 개발 서버가 실행 중이면 기본 E2E 명령은 포트 충돌로 중단된다. 이번 QA는 Git 제외된 임시 Playwright 설정에서 `reuseExistingServer: true`로 해당 서버를 사용했으며 저장소의 기본 서버 격리 설정은 유지했다.
 

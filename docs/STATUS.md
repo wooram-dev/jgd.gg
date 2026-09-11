@@ -21,17 +21,16 @@
 - 개발 DB `jgd`에는 `20260906120000_init_auth_and_game_models` migration과 number-click seed를 적용했다. 테스트 DB `jgd_test`에도 같은 migration을 적용했다.
 - integration 설정이 로컬 env 파일을 선택적으로 로드하며, GameSession의 `createdAt`과 `readyExpiresAt`을 같은 DB 기준 시각으로 저장한다.
 - PostgreSQL integration 17개가 통과했다. 세션 생성·완료의 BANNED 재검증, READY·PLAYING 만료, READY 완료 거부, 오클릭 저장, malformed payload 보존, 완료 후 rank 조회 실패 복구와 랭킹 기간 경계·제외·viewer·결정적 정렬을 포함한다.
-- 공식 E2E 대상 실행은 3개가 통과하고 비대상 project 6개가 skip됐다. 전체 `pnpm test:e2e`에서는 17개 통과, 비대상 공식 조합 6개 skip, 기존 desktop 라운지 200% CSS 확대 위치 검사 1개 실패 뒤 Windows의 Playwright web server 종료 정지로 수동 중단했다.
+- 전체 `pnpm test:e2e`는 18개 통과와 비대상 공식 조합 6개 skip 후 정상 종료한다. desktop 라운지의 200% 확대 검증은 1280px desktop의 유효 콘텐츠 너비를 절반 viewport로 재현해 중앙·보조 열의 재배치와 가로 overflow 없음을 확인한다. E2E runner가 `.next-e2e` 전용 Next.js server를 직접 시작·종료하므로 Windows에서 Playwright web server 종료 뒤 프로세스가 남던 문제가 해소됐다.
 - 개발 환경의 실제 랭킹 조회에 필요한 DB schema와 game row가 준비됐다.
-- 실제 Discord application의 local callback을 구성했다. 실제 계정 로그인, 프로필 mapping, DB session 생성과 callback 후 Discord OAuth token 비저장을 수동 확인했다. 로그인 취소·로그아웃·재로그인 프로필 갱신과 실제 계정 공식 플레이는 아직 검증하지 않았다.
+- 실제 Discord application의 local callback을 구성했다. 실제 계정 로그인, 프로필 mapping, DB session 생성과 callback 후 Discord OAuth token 비저장을 수동 확인했다. 2026-09-11 로컬 브라우저에서 실제 계정 공식 플레이 1회를 완료해 개인 최고와 오늘·주간·전체 랭킹 반영을 확인했다. 같은 날 사용자가 로그인 취소·로그아웃·재로그인 프로필 갱신 수동 QA를 진행했다고 보고했다.
+- 2026-09-12 Codex in-app browser의 기존 인증 세션에서 Enter만으로 공식 게임 시작과 1~25 완료를 확인했고, 결과 heading focus와 개인 최고·오늘·주간·전체 순위 표시를 확인했다. Chrome/Edge의 실제 200% browser zoom과 실기기 Safari/Android QA는 사용자가 수행하기로 했다.
 - Node.js 24.20.0과 pnpm 12.3.4가 프로젝트 고정값에 맞게 준비돼 있다.
 - 로컬 `main` branch가 GitHub의 `origin/main`을 추적한다.
 
 ## 다음 작업 우선순위
 
-1. 실제 Discord application으로 로그인 취소·로그아웃·재로그인 프로필 갱신과 실제 계정 공식 플레이를 수동 검증한다.
-2. desktop 라운지의 200% CSS 확대 위치 검사 회귀와 Playwright web server 종료 후 `pnpm test:e2e` 프로세스가 남는 Windows 환경 문제를 재현·수정한다.
-3. 실제 브라우저 200% zoom, 실기기 Safari/Android와 로그인 후 keyboard-only 공식 흐름 등 남은 출시 전 수동 QA를 수행한다.
+현재 Codex 작업 우선순위는 없다. 사용자가 수행할 수동 QA 결과는 [TESTING.md](TESTING.md)에 기록한다.
 
 ## 갱신 규칙
 

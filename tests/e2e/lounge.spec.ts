@@ -59,9 +59,11 @@ test("라운지의 너비와 가이드, 키보드 접근성을 확인한다", as
   );
   await page.getByText("연습과 공식 기록은 달라요?", { exact: true }).click();
   if ((page.viewportSize()?.width ?? 0) >= 1100) {
-    await page.evaluate(() => {
-      document.documentElement.style.zoom = "2";
-    });
+    const viewport = page.viewportSize();
+    if (!viewport) throw new Error("Desktop viewport is required for the zoom layout check.");
+
+    await page.setViewportSize({ width: Math.floor(viewport.width / 2), height: viewport.height });
+    await page.reload();
     const feed = await page.locator(".lounge-feed").boundingBox();
     const aside = await page.locator(".lounge-aside").boundingBox();
     expect(feed).not.toBeNull();
@@ -70,9 +72,6 @@ test("라운지의 너비와 가이드, 키보드 접근성을 확인한다", as
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
       await page.evaluate(() => window.innerWidth),
     );
-    await page.evaluate(() => {
-      document.documentElement.style.zoom = "";
-    });
   }
   await page.screenshot({ path: testInfo.outputPath("lounge.png"), fullPage: true });
 });

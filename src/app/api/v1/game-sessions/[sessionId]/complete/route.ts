@@ -1,9 +1,11 @@
 import { requireUser } from "@/lib/auth/authorize";
 import { getDatabase } from "@/lib/db/client";
+import { getServerEnv } from "@/lib/env/server";
 import { assertSameOrigin, parseJson, parsePathUuid } from "@/lib/http/request";
 import { getRequestId } from "@/lib/http/request-id";
 import { apiSuccess } from "@/lib/http/response";
 import { handleApiRoute } from "@/lib/http/route";
+import { getRequestNow } from "@/lib/testing/e2e-clock";
 import { completeGameSchema } from "@/features/number-click/schemas/api";
 import {
   buildCompleteResponse,
@@ -23,6 +25,7 @@ export async function POST(request: Request, context: RouteContext): Promise<Res
     const user = await requireUser(request);
     const sessionId = parsePathUuid((await context.params).sessionId);
     const database = getDatabase();
+    const now = getRequestNow(request, getServerEnv());
 
     const completed = await findCompletedRecord(database, { userId: user.id, sessionId });
     if (completed) {
@@ -30,6 +33,7 @@ export async function POST(request: Request, context: RouteContext): Promise<Res
         recordId: completed.recordId,
         userId: user.id,
         idempotentReplay: true,
+        now,
       });
       return apiSuccess(response.data, requestId, { meta: response.meta });
     }
@@ -39,6 +43,7 @@ export async function POST(request: Request, context: RouteContext): Promise<Res
       userId: user.id,
       sessionId,
       completion,
+      now,
     });
     if (!result.ok) {
       throw result.error;
@@ -48,6 +53,7 @@ export async function POST(request: Request, context: RouteContext): Promise<Res
       recordId: result.recordId,
       userId: user.id,
       idempotentReplay: result.idempotentReplay,
+      now,
     });
     return apiSuccess(response.data, requestId, { meta: response.meta });
   });

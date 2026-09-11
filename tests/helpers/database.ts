@@ -1,6 +1,6 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 
-import { PrismaClient } from "@/generated/prisma/client";
+import { PrismaClient, type UserStatus } from "@/generated/prisma/client";
 
 export function createTestDatabase(): PrismaClient {
   const databaseUrl = process.env.DATABASE_URL_TEST;
@@ -21,17 +21,25 @@ export async function cleanApplicationData(database: PrismaClient): Promise<void
   await database.session.deleteMany();
   await database.account.deleteMany();
   await database.user.deleteMany();
+  await database.verification.deleteMany();
 }
 
-export async function createTestUser(database: PrismaClient, id: string) {
+export async function createTestUser(
+  database: PrismaClient,
+  id: string,
+  options: { displayName?: string; image?: string | null; status?: UserStatus } = {},
+) {
+  const displayName = options.displayName ?? `사용자 ${id.slice(0, 4)}`;
   return database.user.create({
     data: {
       id,
-      name: `사용자 ${id.slice(0, 4)}`,
+      name: displayName,
       email: `${id}@discord.placeholder.invalid`,
       emailVerified: false,
+      image: options.image,
       discordUsername: `user-${id.slice(0, 8)}`,
-      discordDisplayName: `사용자 ${id.slice(0, 4)}`,
+      discordDisplayName: displayName,
+      status: options.status,
       profileUpdatedAt: new Date("2026-09-06T00:00:00.000Z"),
     },
   });

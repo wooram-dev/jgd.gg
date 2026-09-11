@@ -1,11 +1,17 @@
 import { betterAuth } from "better-auth";
 import { APIError, createAuthMiddleware } from "better-auth/api";
+import { genericOAuth } from "better-auth/plugins/generic-oauth";
 import { prismaAdapter } from "@better-auth/prisma-adapter";
 
 import { getDatabase } from "@/lib/db/client";
 import { getServerEnv } from "@/lib/env/server";
 
 import { mapDiscordProfile } from "./discord-profile";
+import {
+  exchangeMockDiscordCode,
+  getMockDiscordUserInfo,
+  isMockDiscordEnabled,
+} from "./mock-discord";
 
 const BLOCKED_MUTATION_PATHS = new Set([
   "/update-user",
@@ -22,6 +28,7 @@ const BLOCKED_MUTATION_PATHS = new Set([
 function createJgdAuth() {
   const environment = getServerEnv();
   const secure = environment.NODE_ENV === "production";
+  const mockDiscord = isMockDiscordEnabled(environment);
 
   return betterAuth({
     appName: "JGD.GG",
@@ -31,16 +38,40 @@ function createJgdAuth() {
     database: prismaAdapter(getDatabase(), { provider: "postgresql" }),
     trustedOrigins: [new URL(environment.BETTER_AUTH_URL).origin],
     emailAndPassword: { enabled: false },
-    socialProviders: {
-      discord: {
-        clientId: environment.DISCORD_CLIENT_ID,
-        clientSecret: environment.DISCORD_CLIENT_SECRET,
-        disableDefaultScope: true,
-        scope: ["identify"],
-        overrideUserInfoOnSignIn: true,
-        mapProfileToUser: (profile) => mapDiscordProfile(profile),
-      },
-    },
+    socialProviders: mockDiscord
+      ? {}
+      : {
+          discord: {
+            clientId: environment.DISCORD_CLIENT_ID,
+            clientSecret: environment.DISCORD_CLIENT_SECRET,
+            disableDefaultScope: true,
+            scope: ["identify"],
+            overrideUserInfoOnSignIn: true,
+            mapProfileToUser: (profile) => mapDiscordProfile(profile),
+          },
+        },
+    plugins: mockDiscord
+      ? [
+          genericOAuth({
+            config: [
+              {
+                providerId: "discord",
+                name: "Discord",
+                clientId: environment.DISCORD_CLIENT_ID,
+                clientSecret: environment.DISCORD_CLIENT_SECRET,
+                authorizationUrl: `${new URL(environment.BETTER_AUTH_URL).origin}/api/test/mock-discord/authorize`,
+                accountIssuer: "local:oauth:discord",
+                scopes: ["identify"],
+                pkce: true,
+                overrideUserInfo: true,
+                getToken: (input) => exchangeMockDiscordCode(input, environment),
+                getUserInfo: (tokens) => getMockDiscordUserInfo(tokens, environment),
+                mapProfileToUser: (profile) => mapDiscordProfile(profile),
+              },
+            ],
+          }),
+        ]
+      : [],
     user: {
       changeEmail: { enabled: false },
       deleteUser: { enabled: false },

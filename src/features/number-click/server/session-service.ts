@@ -80,6 +80,17 @@ export async function createGameSession(
   for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
       return await database.$transaction(async (transaction) => {
+        const user = await transaction.user.findUnique({
+          where: { id: input.userId },
+          select: { status: true },
+        });
+        if (!user) {
+          throw new ApiError(401, "AUTH_SESSION_EXPIRED");
+        }
+        if (user.status === "BANNED") {
+          throw new ApiError(403, "USER_BANNED");
+        }
+
         const replay = await transaction.gameSession.findUnique({
           where: {
             userId_idempotencyKey: {
@@ -150,6 +161,7 @@ export async function createGameSession(
             rulesVersion: game.currentRulesVersion,
             rulesSnapshot: NUMBER_CLICK_RULES_SNAPSHOT,
             challengeData: { schemaVersion: 1, board },
+            createdAt: now,
             readyExpiresAt: new Date(now.getTime() + NUMBER_CLICK_RULES.readyLifetimeMs),
           },
           select: {

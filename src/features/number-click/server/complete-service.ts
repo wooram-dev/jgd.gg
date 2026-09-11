@@ -34,10 +34,14 @@ export async function completeGameSessionTransaction(
       include: {
         game: { select: { slug: true } },
         record: { select: { id: true } },
+        user: { select: { status: true } },
       },
     });
     if (!session || session.game.slug !== NUMBER_CLICK_SLUG) {
       return { ok: false, error: new ApiError(404, "NOT_FOUND") };
+    }
+    if (session.user.status === "BANNED") {
+      return { ok: false, error: new ApiError(403, "USER_BANNED") };
     }
     if (session.status === "COMPLETED" && session.record) {
       return { ok: true, recordId: session.record.id, idempotentReplay: true };

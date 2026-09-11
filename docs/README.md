@@ -49,6 +49,7 @@
 | [STATUS.md](STATUS.md) | 현재 구현·환경·blocker·다음 우선순위 | 요구사항과 과거 작업 상세 |
 | [features/number-click.md](features/number-click.md) | number-click 규칙, 상태 머신, 검증, 수락 기준 | 공통 인증 구현 |
 | [features/ranking.md](features/ranking.md) | 기간, 최고 기록 선정, 정렬, 조회 UX, 수락 기준 | 게임 플레이 상태 |
+| [features/points.md](features/points.md) | 사용자별 포인트의 소유권, 적립·사용 원칙, 원장, UX와 수락 기준 | 실제 DB 필드와 HTTP 스키마 |
 
 ## 4. 작업별 필수 문서
 
@@ -62,6 +63,7 @@
 | Discord 로그인·권한 | [AUTH.md](AUTH.md), [DATABASE.md](DATABASE.md), [API.md](API.md), [TESTING.md](TESTING.md) |
 | number-click | [features/number-click.md](features/number-click.md), [API.md](API.md), [DATABASE.md](DATABASE.md), [UI_GUIDE.md](UI_GUIDE.md), [TESTING.md](TESTING.md) |
 | 랭킹 | [features/ranking.md](features/ranking.md), [API.md](API.md), [DATABASE.md](DATABASE.md), [UI_GUIDE.md](UI_GUIDE.md), [TESTING.md](TESTING.md) |
+| 포인트 | [features/points.md](features/points.md), [PRODUCT.md](PRODUCT.md), [AUTH.md](AUTH.md), [DATABASE.md](DATABASE.md), [API.md](API.md), [UI_GUIDE.md](UI_GUIDE.md), [TESTING.md](TESTING.md) |
 | UI·반응형·접근성 | [UI_GUIDE.md](UI_GUIDE.md), 관련 feature 문서, [TESTING.md](TESTING.md) |
 | bug 수정 | 관련 feature 및 API·DB·Auth 문서, [TESTING.md](TESTING.md) |
 | 코드 리뷰 | 변경 영역의 모든 담당 문서와 Acceptance Criteria |
@@ -95,5 +97,6 @@
 ├─ STATUS.md
 └─ features/
    ├─ number-click.md
-   └─ ranking.md
+   ├─ ranking.md
+   └─ points.md
 ~~~

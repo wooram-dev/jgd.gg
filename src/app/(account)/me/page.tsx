@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { Avatar } from "@/components/ui/avatar";
 import { getNumberClickStats } from "@/features/number-click/server/stats-service";
+import { PointsPanel } from "@/features/points/components/points-panel";
 import { getPageViewer } from "@/lib/auth/page-viewer";
 import { getDatabase } from "@/lib/db/client";
 import { formatScore } from "@/lib/time/format-score";
@@ -23,6 +24,7 @@ export default async function MyRecordsPage() {
           <h1>{viewer.displayName}</h1>
         </div>
       </header>
+      <PointsPanel />
       <section className="stats-grid">
         <StatCard
           label="전체 최고"

@@ -21,8 +21,9 @@ AuthUser 1 ─── N AuthSession
    │
    ├── N AuthAccount
    ├── N GameSession N ─── 1 Game
-   └── N GameRecord  N ─── 1 Game
-                   1 ─── 1 GameSession
+   ├── N GameRecord  N ─── 1 Game
+   │               1 ─── 1 GameSession
+   └── 1 PointAccount 1 ─── N PointTransaction N ─── 1 GameRecord
 ~~~
 
 Better Auth의 User를 서비스 User로 사용한다. 별도 중복 사용자 테이블을 만들지 않는다.
@@ -74,6 +75,20 @@ number-click은 MILLISECONDS다.
 | ABANDONED | 사용자가 포기했거나 새 session이 대체함 | 예 |
 | EXPIRED | 제한 시각을 넘김 | 예 |
 | REJECTED | 완료 payload가 도메인 검증에 실패함 | 예 |
+
+### 3.6 PointTransactionType
+
+| 값 | 의미 |
+|---|---|
+| EARN | 유효한 활동 적립 |
+| REVERSAL | 기존 적립을 보존한 채 추가하는 회수 |
+
+### 3.7 PointTransactionReason
+
+| 값 | 의미 |
+|---|---|
+| NUMBER_CLICK_COMPLETION | 유효한 number-click 공식 기록 완료 |
+| GAME_RECORD_INVALIDATION | 보상한 공식 기록의 무효화 회수 |
 
 ## 4. 인증 테이블
 
@@ -340,6 +355,65 @@ result_data version 1 예:
 
 전체 클릭 trace는 저장하지 않는다. 리플레이 시스템은 MVP 비범위이며 불필요한 데이터 증가를 피한다.
 
+새로 완료되는 기록은 result_data version 2를 사용하고 transaction 안에서 확정한 포인트 결정을 함께 저장한다. 정책 적용 전 기존 version 1 기록은 그대로 유지한다.
+
+~~~json
+{
+  "schemaVersion": 2,
+  "validationVersion": 1,
+  "clientElapsedMs": 14200,
+  "boardDigest": "sha256-base64url",
+  "pointAward": {
+    "status": "AWARDED",
+    "amount": 10,
+    "policyVersion": "number-click-completion-v1"
+  }
+}
+~~~
+
+## 7.1 point_account
+
+서비스 User마다 정확히 하나인 확정 잔액 row다.
+
+| 필드 | DB 타입 | null | 규칙 |
+|---|---|---:|---|
+| user_id | text | N | PK, FK user.id ON DELETE CASCADE |
+| balance | integer | N | default 0, 0 이상 |
+| created_at | timestamptz | N | default now |
+| updated_at | timestamptz | N | 마지막 잔액 변경 시각 |
+
+기존 user는 migration에서 0P로 backfill한다. 이후 user insert의 포인트 계정 누락은 `user_create_point_account` AFTER INSERT trigger가 막는다. user 삭제 시 계정과 원장은 함께 CASCADE된다.
+
+## 7.2 point_transaction
+
+잔액 변동의 append-only 원장이다. 과거 row를 수정하거나 개별 삭제하지 않으며 정정은 REVERSAL row로 추가한다.
+
+| 필드 | DB 타입 | null | 규칙 |
+|---|---|---:|---|
+| id | uuid | N | PK, DB gen_random_uuid |
+| account_user_id | text | N | FK point_account.user_id ON DELETE CASCADE |
+| type | PointTransactionType | N | EARN 또는 REVERSAL |
+| reason | PointTransactionReason | N | 변동 사유 |
+| amount | integer | N | 0이 아닌 signed 증감량 |
+| balance_after | integer | N | 이 변동 직후 확정 잔액, 0 이상 |
+| game_record_id | uuid | N | 원인 GameRecord FK ON DELETE CASCADE |
+| related_transaction_id | uuid | Y | REVERSAL이면 원본 EARN FK |
+| policy_version | varchar(64) | N | 적용 정책 버전 |
+| idempotency_key | varchar(128) | N | 사용자 계정 안의 안정된 처리 key |
+| created_at | timestamptz | N | 서버 처리 시각 |
+
+제약과 인덱스:
+
+- UNIQUE(account_user_id, idempotency_key)
+- UNIQUE(type, game_record_id): 한 기록에는 EARN과 REVERSAL이 각각 최대 하나
+- CHECK amount <> 0, balance_after >= 0, policy_version과 idempotency_key 길이
+- EARN은 NUMBER_CLICK_COMPLETION, 양수 amount, related_transaction_id null
+- REVERSAL은 GAME_RECORD_INVALIDATION, 음수 amount, related_transaction_id not null
+- INDEX(account_user_id, created_at DESC, id DESC): 최근 내역 조회
+- INDEX(related_transaction_id)
+
+포인트 사용은 v1 비범위이므로 SPEND enum이나 사용 요청 table을 미리 만들지 않는다.
+
 ## 8. GameRecord 인덱스
 
 ### 8.1 개인 최근 기록
@@ -386,6 +460,7 @@ WHERE rank_eligible = true;
 | 데이터 | 정책 |
 |---|---|
 | GameRecord | 사용자가 존재하는 동안 보존. user 삭제 시 CASCADE |
+| PointAccount·PointTransaction | user가 존재하는 동안 보존. user 삭제 시 CASCADE |
 | COMPLETED GameSession | 기록 audit를 위해 보존 |
 | ABANDONED, EXPIRED, REJECTED GameSession | 90일 보존 후 운영 cleanup 가능 |
 | READY/PLAYING GameSession | 요청 시 lazy expiration. 운영 cleanup으로도 terminal 전환 가능 |
@@ -422,8 +497,11 @@ SERIALIZABLE까지 올리지 않고 기본 READ COMMITTED와 partial unique inde
 4. event replay와 시간 검증을 application service가 수행한다.
 5. 도메인 검증 실패면 REJECTED로 갱신하고 record는 만들지 않는다.
 6. 성공이면 GameRecord를 insert한다.
-7. GameSession을 COMPLETED로 갱신한다.
-8. commit한다.
+7. PointAccount를 FOR UPDATE로 잠그고 balance와 원장 합계를 대조한다.
+8. 정책 시작 시각과 KST 일일 EARN 합계를 확인해 한도 안이면 잔액 갱신과 EARN 원장 insert를 수행한다.
+9. GameRecord.resultData에 같은 transaction에서 확정한 포인트 결정을 기록한다.
+10. GameSession을 COMPLETED로 갱신한다.
+11. commit한다.
 
 GameRecord UNIQUE(session_id)와 row lock이 동시에 들어온 완료 요청을 최종 방어한다.
 
@@ -459,4 +537,6 @@ scoreDirection DESC 게임을 추가할 때 query builder는 방향을 allowlist
 - [ ] 랭킹용 partial index와 기간 index가 migration SQL에 존재한다.
 - [ ] 모든 기간 시각은 timestamptz UTC다.
 - [ ] integration test가 CHECK, FK, UNIQUE, CASCADE를 검증한다.
-
+- [ ] 모든 기존·신규 user에 0 이상의 PointAccount 하나가 있고 신규 생성 누락을 DB trigger가 막는다.
+- [ ] PointAccount 잔액과 append-only PointTransaction이 한 transaction에서 갱신된다.
+- [ ] 같은 GameRecord의 적립·회수는 type별 최대 한 번이며 음수 잔액과 원장 불일치를 거부한다.

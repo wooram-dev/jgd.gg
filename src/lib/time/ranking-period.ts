@@ -12,6 +12,12 @@ export type RankingPeriod = {
   endsAt: Date | null;
 };
 
+export function getRankingPeriod(
+  key: Exclude<RankingPeriodKey, "all">,
+  now: Date,
+): RankingPeriod & { startsAt: Date; endsAt: Date };
+export function getRankingPeriod(key: "all", now: Date): RankingPeriod;
+export function getRankingPeriod(key: RankingPeriodKey, now: Date): RankingPeriod;
 export function getRankingPeriod(key: RankingPeriodKey, now: Date): RankingPeriod {
   if (key === "all") {
     return { key, timeZone: SERVICE_TIME_ZONE, startsAt: null, endsAt: null };

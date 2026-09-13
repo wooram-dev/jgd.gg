@@ -196,17 +196,17 @@ local HTTP에서만 Secure false를 허용하며 NODE_ENV production에서는 fa
 
 BANNED user의 과거 GameRecord는 rank query에서 제외한다. 기록은 감사 목적으로 DB에 남는다.
 
-### 10.1 포인트 권한(MVP 이후)
+### 10.1 포인트 권한
 
-포인트 기능을 활성화한 뒤에는 다음 권한을 적용한다.
+활성 포인트 적립 v1에는 다음 권한을 적용한다.
 
 | 기능 | 비로그인 | ACTIVE 로그인 | BANNED 로그인 |
 |---|---:|---:|---:|
 | 본인 잔액·변동 내역 | 거부 | 허용 | 허용 |
-| 활동 포인트 적립·사용 | 거부 | 서버가 확인한 본인 활동만 | 403 |
+| 공식 완료 포인트 적립 | 없음 | 서버가 확인한 본인 활동만 | 공식 완료 mutation 403 |
 | 타인 잔액·변동 내역 | 거부 | 거부 | 거부 |
 
-기록 무효화에 따른 회수와 감사용 정정은 사용자 요청 endpoint가 아니라 서버·운영 절차로만 처리한다. 상세 기능 규칙은 [features/points.md](features/points.md)를 따르며, 활성화 전 정확한 API와 데이터 제약을 담당 문서에 추가한다.
+기록 무효화에 따른 회수는 사용자 요청 endpoint가 아니라 서버·운영 절차로만 처리한다. 포인트 사용은 v1 비범위다. 상세 기능 규칙은 [features/points.md](features/points.md), 조회 계약은 API.md를 따른다.
 
 ## 11. 인증 오류 UX
 
@@ -323,3 +323,4 @@ guilds user scope 방식은 사용자의 전체 서버 목록 접근과 access t
 - [ ] 모든 게임 mutation이 auth와 DB user.status를 확인한다.
 - [ ] 외부 returnTo와 타인 session 접근이 차단된다.
 - [ ] Discord 실제 호출 없이 핵심 auth integration test가 통과한다.
+- [ ] 포인트 조회는 로그인한 본인에게만 허용하고 BANNED 사용자의 조회는 유지하되 새 적립은 차단한다.

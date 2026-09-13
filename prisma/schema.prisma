@@ -47,6 +47,20 @@ enum GameSessionStatus {
   @@map("game_session_status")
 }
 
+enum PointTransactionType {
+  EARN
+  REVERSAL
+
+  @@map("point_transaction_type")
+}
+
+enum PointTransactionReason {
+  NUMBER_CLICK_COMPLETION
+  GAME_RECORD_INVALIDATION
+
+  @@map("point_transaction_reason")
+}
+
 model User {
   id                 String        @id @default(uuid())
   name               String
@@ -64,6 +78,7 @@ model User {
   sessions           Session[]
   gameSessions       GameSession[]
   gameRecords        GameRecord[]
+  pointAccount       PointAccount?
 
   @@map("user")
 }
@@ -182,7 +197,43 @@ model GameRecord {
   session           GameSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   game              Game        @relation(fields: [gameId], references: [id], onDelete: Restrict)
+  pointTransactions PointTransaction[]
 
   @@index([userId, gameId, achievedAt(sort: Desc)])
   @@map("game_record")
+}
+
+model PointAccount {
+  userId       String             @id @map("user_id")
+  balance      Int                @default(0)
+  createdAt    DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions PointTransaction[]
+
+  @@map("point_account")
+}
+
+model PointTransaction {
+  id                   String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountUserId        String                 @map("account_user_id")
+  type                 PointTransactionType
+  reason               PointTransactionReason
+  amount               Int
+  balanceAfter         Int                    @map("balance_after")
+  gameRecordId         String                 @map("game_record_id") @db.Uuid
+  relatedTransactionId String?                @map("related_transaction_id") @db.Uuid
+  policyVersion        String                 @map("policy_version") @db.VarChar(64)
+  idempotencyKey       String                 @map("idempotency_key") @db.VarChar(128)
+  createdAt            DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
+  account              PointAccount           @relation(fields: [accountUserId], references: [userId], onDelete: Cascade)
+  gameRecord           GameRecord             @relation(fields: [gameRecordId], references: [id], onDelete: Cascade)
+  relatedTransaction   PointTransaction?      @relation("PointTransactionReversal", fields: [relatedTransactionId], references: [id], onDelete: Cascade)
+  reversals            PointTransaction[]     @relation("PointTransactionReversal")
+
+  @@unique([accountUserId, idempotencyKey])
+  @@unique([type, gameRecordId])
+  @@index([accountUserId, createdAt(sort: Desc), id(sort: Desc)])
+  @@index([relatedTransactionId])
+  @@map("point_transaction")
 }

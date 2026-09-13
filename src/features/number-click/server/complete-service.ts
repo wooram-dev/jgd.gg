@@ -4,6 +4,7 @@ import type { PrismaClient } from "@/generated/prisma/client";
 import { Prisma } from "@/generated/prisma/client";
 import { ApiError } from "@/lib/http/api-error";
 
+import { awardOfficialCompletionPoints, getCompletionPointSummary } from "@/features/points/server";
 import { getNumberClickRanking } from "../../ranking/server/ranking-service";
 import { replayNumberClick } from "../domain/replay";
 import { NUMBER_CLICK_RULES, NUMBER_CLICK_SLUG } from "../domain/rules";
@@ -123,12 +124,30 @@ export async function completeGameSessionTransaction(
         clickCount: replay.clickCount,
         serverElapsedMs,
         resultData: {
-          schemaVersion: 1,
+          schemaVersion: 2,
           validationVersion: 1,
           clientElapsedMs: replay.durationMs,
           boardDigest,
         },
         achievedAt: now,
+      },
+    });
+    const pointAward = await awardOfficialCompletionPoints(transaction, {
+      userId: session.userId,
+      gameRecordId: record.id,
+      achievedAt: now,
+      now,
+    });
+    await transaction.gameRecord.update({
+      where: { id: record.id },
+      data: {
+        resultData: {
+          schemaVersion: 2,
+          validationVersion: 1,
+          clientElapsedMs: replay.durationMs,
+          boardDigest,
+          pointAward,
+        },
       },
     });
     await transaction.gameSession.update({
@@ -178,6 +197,10 @@ export async function buildCompleteResponse(
   });
   const best = orderedRecords[0] ?? null;
   const previousBest = orderedRecords.find((candidate) => candidate.id !== record.id) ?? null;
+  const points = await getCompletionPointSummary(database, {
+    userId: input.userId,
+    gameRecordId: record.id,
+  });
 
   let ranks: { today: number | null; week: number | null; all: number | null } = {
     today: null,
@@ -231,6 +254,7 @@ export async function buildCompleteResponse(
         previousPersonalBestMs: previousBest?.scoreValue ?? null,
       },
       ranks,
+      points,
     },
     meta: {
       idempotentReplay: input.idempotentReplay,

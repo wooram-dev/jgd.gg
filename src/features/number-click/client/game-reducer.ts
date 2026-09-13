@@ -21,6 +21,13 @@ export type OfficialResult = {
     week: number | null;
     all: number | null;
   };
+  points: {
+    status: "AWARDED" | "DAILY_LIMIT_REACHED" | "NOT_ELIGIBLE" | "REVERSED";
+    awarded: number;
+    balance: number;
+    dailyLimit: number;
+    policyVersion: string;
+  };
 };
 
 export type FinishedResult =

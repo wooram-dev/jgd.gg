@@ -93,7 +93,7 @@ test("mock Discord 로그인과 desktop 공식 완료·페널티·재도전·랭
   try {
     const user = await database.user.findUniqueOrThrow({
       where: { email: `${E2E_PLAYER_ID}@discord.placeholder.invalid` },
-      include: { accounts: true, sessions: true },
+      include: { accounts: true, sessions: true, pointAccount: true },
     });
     expect(user.name).toBe("E2E Player");
     expect(user.emailVerified).toBe(false);
@@ -112,6 +112,7 @@ test("mock Discord 로그인과 desktop 공식 완료·페널티·재도전·랭
     });
     expect(user.sessions).toHaveLength(1);
     expect(user.sessions[0]).toMatchObject({ ipAddress: null, userAgent: null });
+    expect(user.pointAccount).toMatchObject({ balance: 0 });
   } finally {
     await database.$disconnect();
   }
@@ -124,6 +125,7 @@ test("mock Discord 로그인과 desktop 공식 완료·페널티·재도전·랭
   await expect(page.getByRole("heading", { name: "4.50초" })).toBeFocused();
   await expect(page.getByText("새 개인 최고!", { exact: true })).toBeVisible();
   await expect(page.getByText(/실제 4\.00초 \+ 오클릭 1회/)).toBeVisible();
+  await expect(page.getByText("+10 P 적립 · 보유 10 P", { exact: true })).toBeVisible();
   await expect(page.getByText("오늘 1위")).toBeVisible();
 
   const firstSessionId = await readOnlySessionId();
@@ -137,6 +139,12 @@ test("mock Discord 로그인과 desktop 공식 완료·페널티·재도전·랭
   await expect(viewerRow).toContainText("E2E Player");
   await expect(viewerRow).toContainText("4.50초");
   await expect(viewerRow.getByText("내 기록", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "보유 포인트 10 P" })).toBeVisible();
+
+  await page.goto("/me");
+  await expect(page.getByRole("heading", { name: "내 포인트" })).toBeVisible();
+  await expect(page.getByText("10 P", { exact: true }).last()).toBeVisible();
+  await expect(page.getByText("숫자 순서대로 누르기 공식 완료")).toBeVisible();
 });
 
 test("390px mobile에서 공식 완료와 결과 action을 사용할 수 있다", async ({ page }, testInfo) => {
@@ -157,6 +165,7 @@ test("390px mobile에서 공식 완료와 결과 action을 사용할 수 있다"
 
   await completeBoard(page);
   await expect(page.getByRole("heading", { name: "4.00초" })).toBeVisible();
+  await expect(page.getByText("+10 P 적립 · 보유 10 P", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "다시 하기" })).toBeVisible();
   await expect(page.getByRole("link", { name: "랭킹 보기", exact: true })).toBeVisible();
 });
@@ -179,6 +188,8 @@ test("완료 response 유실 뒤 같은 payload 재전송은 record 한 건만 �
   const database = createTestDatabase();
   try {
     expect(await database.gameRecord.count()).toBe(1);
+    expect(await database.pointTransaction.count()).toBe(1);
+    expect(await database.pointAccount.findFirst()).toMatchObject({ balance: 10 });
   } finally {
     await database.$disconnect();
   }

@@ -38,6 +38,7 @@ tests/
   integration/
     auth/
     game-session/
+    points/
     ranking/
   e2e/
     guest-practice.spec.ts
@@ -148,6 +149,7 @@ Playwright helper가 mock provider를 통해 로그인하고 storage state를 �
 - score formatter
 - game state reducer
 - API Zod schema의 경계값
+- 포인트 정책 적용 시각, KST 일일 경계와 10P·50P 결정
 
 원칙:
 
@@ -188,6 +190,12 @@ ranking:
 - viewer row 강조
 - top 밖 viewer card
 - 긴 displayName ellipsis에 accessible full name
+
+points:
+
+- loading, 0P 빈 원장, 적립·회수 목록
+- 조회 실패와 다시 불러오기 복구
+- 증감 부호, 사유와 시각을 색 외 텍스트로 제공
 
 접근성:
 
@@ -242,6 +250,18 @@ ranking:
 
 AUTH.md의 테스트 절을 모두 포함한다.
 
+### 10.6 Points
+
+- 기존 user backfill과 신규 user 0P 계정 자동 생성
+- 정책 적용 시각 전·경계, KST 날짜 경계
+- 공식 완료당 10P, 하루 최대 50P와 여섯 번째 기록 0P
+- 같은 GameRecord의 순차·동시 replay가 EARN 한 건
+- balance와 원장 합계 불일치 시 완료·적립 전체 rollback
+- balance 음수와 같은 type/GameRecord 중복의 DB 제약
+- 기록 무효화 시 원본 EARN 보존, REVERSAL 한 건과 0 미만 방지
+- BANNED 본인 조회 허용과 새 공식 완료 적립 차단
+- 본인 조회 DTO에 타인 userId, 내부 무효화 사유와 GameRecord id 미노출
+
 ## 11. E2E 필수 흐름
 
 ### 11.1 Guest
@@ -269,8 +289,9 @@ AUTH.md의 테스트 절을 모두 포함한다.
 5. 1~25 완료
 6. 실제 시간 + 500ms 결과
 7. 개인 최고와 순위
-8. 다시 하기
-9. 새 session/board 확인
+8. +10P 적립 결과와 header·/me 확정 잔액·최근 내역
+9. 다시 하기
+10. 새 session/board 확인
 
 ### 11.3 Official mobile
 
@@ -278,6 +299,7 @@ AUTH.md의 테스트 절을 모두 포함한다.
 - board overflow 없음
 - touch target 기준
 - 결과와 다시 하기 접근 가능
+- 적립 결과가 가로 overflow 없이 표시됨
 
 ### 11.4 Retry
 
@@ -427,3 +449,4 @@ Result: PASS
 - [ ] desktop/mobile 공식 흐름과 guest 흐름이 있다.
 - [ ] package script와 CI gate가 문서의 이름과 일치한다.
 - [ ] 실패한 test나 미실행 gate를 완료 보고에서 숨기지 않는다.
+- [ ] 포인트 정책 경계, 동시 멱등성, 원장 정합성, 회수와 본인 조회가 실제 PostgreSQL·component·E2E로 검증된다.

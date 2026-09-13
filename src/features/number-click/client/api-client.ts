@@ -47,6 +47,13 @@ const completeSessionSchema = z.object({
       week: z.number().int().nullable(),
       all: z.number().int().nullable(),
     }),
+    points: z.object({
+      status: z.enum(["AWARDED", "DAILY_LIMIT_REACHED", "NOT_ELIGIBLE", "REVERSED"]),
+      awarded: z.number().int().nonnegative(),
+      balance: z.number().int().nonnegative(),
+      dailyLimit: z.number().int().positive(),
+      policyVersion: z.string().min(1),
+    }),
   }),
   meta: z.object({ requestId: z.string(), idempotentReplay: z.boolean() }),
 });

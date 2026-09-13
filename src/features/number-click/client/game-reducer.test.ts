@@ -124,6 +124,13 @@ describe("gameReducer", () => {
       },
       result: { isPersonalBest: true, previousPersonalBestMs: null },
       ranks: { today: 1, week: 1, all: 1 },
+      points: {
+        status: "AWARDED" as const,
+        awarded: 10,
+        balance: 10,
+        dailyLimit: 50,
+        policyVersion: "number-click-completion-v1",
+      },
     };
     expect(gameReducer(state, { type: "OFFICIAL_RESULT", result })).toMatchObject({
       status: "FINISHED",

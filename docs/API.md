@@ -13,7 +13,7 @@
 - duration/score: 정수 millisecond
 - ID: UUID 문자열 또는 auth user text ID. 공개 응답에는 내부 userId를 반환하지 않는다.
 - mutation 응답은 Cache-Control: no-store다.
-- ranking과 개인 통계도 MVP에서는 Cache-Control: no-store다.
+- ranking, 개인 통계와 포인트 조회도 Cache-Control: no-store다.
 - 알 수 없는 request field는 Zod strict schema로 거부한다.
 - request body 최대 크기는 완료 endpoint 16KB, 그 외 JSON endpoint 4KB다.
 
@@ -86,6 +86,7 @@
 | POST | /api/v1/game-sessions/{sessionId}/abandon | 필수 | 미완료 session 포기 |
 | GET | /api/v1/games/number-click/rankings | 선택 | 기간 랭킹 |
 | GET | /api/v1/me/games/number-click/stats | 필수 | 개인 기록 요약 |
+| GET | /api/v1/me/points | 필수 | 본인 확정 포인트 잔액과 최근 원장 |
 
 연습 플레이는 서버 API를 호출하지 않는다.
 
@@ -310,6 +311,13 @@ client가 mistakeCount, penaltyMs, finalMs를 보내는 것은 schema 오류다.
       "today": 7,
       "week": 21,
       "all": 48
+    },
+    "points": {
+      "status": "AWARDED",
+      "awarded": 10,
+      "balance": 40,
+      "dailyLimit": 50,
+      "policyVersion": "number-click-completion-v1"
     }
   },
   "meta": {
@@ -320,6 +328,17 @@ client가 mistakeCount, penaltyMs, finalMs를 보내는 것은 schema 오류다.
 ~~~
 
 rank가 없을 수 없지만 후속 rank query가 일시 실패하면 완료 기록 자체를 rollback하지 않는다. 이 경우 ranks 값은 null이고 meta에 rankLookupFailed true를 포함하며 200을 반환한다. 클라이언트는 랭킹 링크를 제공한다.
+
+points.status는 다음 중 하나다.
+
+| 값 | 의미 |
+|---|---|
+| AWARDED | 이 기록에 awarded 10P를 적립함 |
+| DAILY_LIMIT_REACHED | KST 당일 50P 한도로 awarded 0 |
+| NOT_ELIGIBLE | 정책 적용 시작 이전 기록이어서 awarded 0 |
+| REVERSED | 이 기록의 기존 적립이 무효화 회수돼 awarded 0 |
+
+balance는 응답 생성 시 DB에서 확인한 현재 확정 잔액이다. 동일 완료 replay는 최초 transaction에서 GameRecord.resultData에 기록한 포인트 결정을 반환하며 적립을 다시 실행하지 않는다.
 
 ### 멱등성
 
@@ -472,7 +491,44 @@ body는 빈 object다.
 
 recent는 achievedAt 내림차순 최대 10개이며 rankEligible 여부와 무관하게 본인 기록을 보여준다. 무효화 사유는 노출하지 않고 invalidated true만 필요할 때 추가할 수 있으나 MVP UI에는 표시하지 않는다.
 
-## 12. Better Auth 경로
+## 12. GET /api/v1/me/points
+
+로그인한 본인의 확정 포인트 잔액과 최근 append-only 변동 원장 최대 20개를 반환한다. BANNED 사용자의 조회도 허용한다. userId path나 query를 받지 않으므로 타인 계정을 지정할 수 없다.
+
+### 200 response
+
+~~~json
+{
+  "data": {
+    "balance": 40,
+    "unit": "P",
+    "transactions": [
+      {
+        "id": "b4ce91a4-...",
+        "type": "EARN",
+        "reason": "NUMBER_CLICK_COMPLETION",
+        "amount": 10,
+        "balanceAfter": 40,
+        "policyVersion": "number-click-completion-v1",
+        "createdAt": "2026-09-12T03:00:00.000Z"
+      }
+    ]
+  },
+  "meta": {
+    "requestId": "018f..."
+  }
+}
+~~~
+
+규칙:
+
+- transaction은 createdAt DESC, id DESC 순이며 최대 20개다.
+- 내역이 없으면 transactions는 빈 array이고 balance는 0이다.
+- amount는 EARN이면 양수, REVERSAL이면 음수다.
+- 내부 invalidatedReason, userId와 GameRecord id는 반환하지 않는다.
+- 계정 누락이나 잔액·원장 불일치는 정상값으로 보정하지 않고 500 INTERNAL_ERROR다.
+
+## 13. Better Auth 경로
 
 다음은 library가 소유한다.
 
@@ -486,7 +542,7 @@ recent는 achievedAt 내림차순 최대 10개이며 rankEligible 여부와 무�
 
 MVP UI에서 허용하는 auth 행위는 Discord sign-in, current session read, sign-out뿐이다. email/password, profile update, account link/unlink, account delete 기능을 활성화하지 않는다.
 
-## 13. 입력과 보안 규칙
+## 14. 입력과 보안 규칙
 
 - object schema는 strict다.
 - UUID는 canonical 형식으로 parse한다.
@@ -498,7 +554,7 @@ MVP UI에서 허용하는 auth 행위는 Discord sign-in, current session read, 
 - CORS 허용 origin 목록은 canonical same origin 하나다. wildcard를 사용하지 않는다.
 - GET은 상태를 변경하지 않는다.
 
-## 14. API Acceptance Criteria
+## 15. API Acceptance Criteria
 
 - [ ] 모든 /api/v1 response가 공통 envelope와 requestId를 사용한다. 204만 body가 없다.
 - [ ] mutation은 인증, ACTIVE user, Origin, strict schema를 검증한다.
@@ -509,3 +565,5 @@ MVP UI에서 허용하는 auth 행위는 Discord sign-in, current session read, 
 - [ ] duplicate/concurrent 완료는 record 한 건과 동일 결과를 반환한다.
 - [ ] 공개 ranking은 비로그인에도 동작하고 viewer는 선택적이다.
 - [ ] 모든 오류 code에 integration test가 있다.
+- [ ] 완료 응답은 확정된 포인트 적립 상태와 잔액을 반환하고 replay에서 같은 기록을 다시 적립하지 않는다.
+- [ ] 본인 포인트 API는 ACTIVE·BANNED 로그인 사용자만 자신의 잔액과 최근 원장을 조회한다.

@@ -373,6 +373,7 @@ export function NumberClickGame({
                 mistakeCount={state.result.record.mistakeCount}
                 penaltyMs={state.result.record.penaltyMs}
               />
+              <PointAwardSummary points={state.result.points} />
               <div className="rank-summary">
                 <span>오늘 {state.result.ranks.today ? `${state.result.ranks.today}위` : "—"}</span>
                 <span>
@@ -476,4 +477,35 @@ function ResultEquation({
       {formatScore(penaltyMs)}
     </p>
   );
+}
+
+function PointAwardSummary({
+  points,
+}: {
+  points: {
+    status: "AWARDED" | "DAILY_LIMIT_REACHED" | "NOT_ELIGIBLE" | "REVERSED";
+    awarded: number;
+    balance: number;
+    dailyLimit: number;
+  };
+}) {
+  if (points.status === "AWARDED") {
+    return (
+      <p className="point-award">
+        +{points.awarded.toLocaleString("ko-KR")} P 적립 · 보유{" "}
+        {points.balance.toLocaleString("ko-KR")} P
+      </p>
+    );
+  }
+  if (points.status === "DAILY_LIMIT_REACHED") {
+    return (
+      <p className="point-award">
+        오늘 적립 한도 {points.dailyLimit.toLocaleString("ko-KR")} P를 모두 채웠습니다.
+      </p>
+    );
+  }
+  if (points.status === "REVERSED") {
+    return <p className="point-award">이 기록의 포인트는 회수되었습니다.</p>;
+  }
+  return <p className="point-award">포인트 정책 적용 전 기록입니다.</p>;
 }

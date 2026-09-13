@@ -62,6 +62,9 @@ async function stopServer(child: ChildProcess): Promise<void> {
       windowsHide: true,
     });
     await waitForExit(taskkill);
+    child.stdout?.destroy();
+    child.stderr?.destroy();
+    child.unref();
     return;
   }
 

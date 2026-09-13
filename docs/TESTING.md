@@ -345,6 +345,7 @@ Windows 로컬 개발 서버, Playwright Chromium에서 확인했다. 기록 목
 | 키보드 / reduced motion | PASS | 본문 건너뛰기, 게임 핵심 테스트, 비필수 모션 축소 |
 | 실제 클립보드 | PASS | 격리된 Chromium의 권한 허용 후 복사 문자열 일치 |
 | 실제 Discord 로그인·공식 기록 | PASS (2026-09-11) | 로컬 `http://localhost:3000`, Codex in-app browser에서 실제 계정의 공식 플레이 완료와 개인 최고·오늘·주간·전체 랭킹 반영 확인 |
+| 실제 Discord 계정 포인트 적립 | PASS (2026-09-13) | 로컬 `http://localhost:3000`, Codex in-app browser의 기존 실제 인증 세션에서 공식 완료당 10P, 완료 결과와 같은 화면 header의 확정 잔액 갱신, `/me` 잔액·최신 원장 일치를 확인 |
 | 실제 Discord 로그인 취소·로그아웃·프로필 갱신 | USER-REPORTED (2026-09-11) | 사용자가 수동 QA 수행을 보고함; pass/fail 및 브라우저별 세부 결과는 별도 기록 필요 |
 | 로그인 후 keyboard-only 공식 흐름 | PASS (2026-09-12) | 로컬 `http://localhost:3000`, Codex in-app browser의 기존 인증 세션에서 게임 시작과 1~25 입력을 Enter로 완료했다. 결과 heading으로 focus가 이동하고 개인 최고·오늘·주간·전체 순위가 표시됐다. |
 | 실제 브라우저 200% zoom | BLOCKED (2026-09-12) | Codex in-app browser에서 확대 단축키가 유효 viewport를 변경하지 않아 검증할 수 없었다. Chrome/Edge 또는 지원 브라우저에서 별도 확인이 필요하다. |

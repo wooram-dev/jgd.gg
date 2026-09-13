@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useReducer, useRef, useState } from "react";
 
 import { SignInButton } from "@/components/ui/auth-button";
@@ -61,6 +62,7 @@ export function NumberClickGame({
   personalBest,
   todayBest,
 }: NumberClickGameProps) {
+  const router = useRouter();
   const [state, dispatch] = useReducer(gameReducer, initialGameState);
   const [wrongValue, setWrongValue] = useState<number | null>(null);
   const [showGo, setShowGo] = useState(false);
@@ -103,11 +105,14 @@ export function NumberClickGame({
     inFlightCompletion.current = key;
 
     void completeOfficialSession(state.sessionId, state.completionPayload)
-      .then((result) => dispatch({ type: "OFFICIAL_RESULT", result }))
+      .then((result) => {
+        dispatch({ type: "OFFICIAL_RESULT", result });
+        router.refresh();
+      })
       .catch((error: unknown) => {
         dispatch({ type: "FAIL", error: toUiError(error, "complete"), preserveCompletion: true });
       });
-  }, [state]);
+  }, [router, state]);
 
   async function runCountdown(operation: number): Promise<boolean> {
     await wait(500);

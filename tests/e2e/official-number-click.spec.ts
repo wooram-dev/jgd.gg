@@ -126,6 +126,7 @@ test("mock Discord 로그인과 desktop 공식 완료·페널티·재도전·랭
   await expect(page.getByText("새 개인 최고!", { exact: true })).toBeVisible();
   await expect(page.getByText(/실제 4\.00초 \+ 오클릭 1회/)).toBeVisible();
   await expect(page.getByText("+10 P 적립 · 보유 10 P", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "보유 포인트 10 P" })).toBeVisible();
   await expect(page.getByText("오늘 1위")).toBeVisible();
 
   const firstSessionId = await readOnlySessionId();

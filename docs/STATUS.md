@@ -1,6 +1,6 @@
 # JGD.GG 현재 상태
 
-기준일: 2026-09-11
+기준일: 2026-09-13
 
 이 문서는 다음 작업을 시작할 때 필요한 현재 구현 상태, 환경 제약과 우선순위를 요약한다. 제품·보안·DB·API 동작의 Source of Truth는 [README.md](README.md)가 안내하는 담당 설계 문서이며, 과거 변경은 Git 이력에 보존한다.
 
@@ -30,14 +30,14 @@
 - 개발 환경의 실제 랭킹 조회에 필요한 DB schema와 game row가 준비됐다.
 - 실제 Discord application의 local callback을 구성했다. 실제 계정 로그인, 프로필 mapping, DB session 생성과 callback 후 Discord OAuth token 비저장을 수동 확인했다. 2026-09-11 로컬 브라우저에서 실제 계정 공식 플레이 1회를 완료해 개인 최고와 오늘·주간·전체 랭킹 반영을 확인했다. 같은 날 사용자가 로그인 취소·로그아웃·재로그인 프로필 갱신 수동 QA를 진행했다고 보고했다.
 - 2026-09-12 Codex in-app browser의 기존 인증 세션에서 Enter만으로 공식 게임 시작과 1~25 완료를 확인했고, 결과 heading focus와 개인 최고·오늘·주간·전체 순위 표시를 확인했다. Chrome/Edge의 실제 200% browser zoom과 실기기 Safari/Android QA는 사용자가 수행하기로 했다.
+- 2026-09-13 로컬 Codex in-app browser의 실제 Discord 인증 세션에서 공식 완료당 10P 적립을 확인했다. 완료 직후 결과와 공통 header가 같은 확정 잔액으로 갱신되고 `/me`의 잔액·최신 원장과 일치하며, 이 과정에서 발견한 상위 layout 잔액 지연은 완료 성공 후 Server Component refresh와 E2E 회귀 검증으로 수정했다.
 - Node.js 24.20.0과 pnpm 12.3.4가 프로젝트 고정값에 맞게 준비돼 있다.
 - 로컬 `main` branch가 GitHub의 `origin/main`을 추적한다.
 
 ## 다음 작업 우선순위
 
-1. 실제 Discord 계정으로 공식 완료 10P 적립, header·`/me` 잔액과 최근 내역을 local 또는 staging에서 수동 확인한다.
-2. 출시 전 production 유사 DB에서 포인트 적립 transaction과 기존 랭킹의 performance smoke, migration backup/forward-fix 계획을 확인한다.
-3. 포인트 사용처·상점은 별도 제품 요구사항이 승인된 뒤 정책, 원자적 대상 효과와 멱등성 계약부터 설계한다.
+1. 출시 전 production 유사 DB에서 포인트 적립 transaction과 기존 랭킹의 performance smoke, migration backup/forward-fix 계획을 확인한다.
+2. 포인트 사용처·상점은 별도 제품 요구사항이 승인된 뒤 정책, 원자적 대상 효과와 멱등성 계약부터 설계한다.
 
 사용자가 수행할 기존 Chrome/Edge 200% browser zoom과 실기기 Safari/Android QA 결과는 [TESTING.md](TESTING.md)에 기록한다.
 

@@ -2221,14 +2221,6 @@ p {
   color: var(--color-text-muted);
   font-size: 13px;
 }
-.story-member-badge {
-  flex-shrink: 0;
-  padding: 5px 9px;
-  border: 1px solid var(--color-border);
-  border-radius: 20px;
-  color: var(--color-focus);
-  font-size: 11px;
-}
 .story-strip {
   display: flex;
   align-items: center;
@@ -2456,9 +2448,6 @@ p {
 @media (max-width: 520px) {
   .story-section {
     padding: 18px 14px;
-  }
-  .story-member-badge {
-    display: none;
   }
   .story-strip {
     gap: 12px;

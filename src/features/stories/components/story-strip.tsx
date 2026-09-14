@@ -285,7 +285,6 @@ export function StoryStrip({
           </h2>
           <p className="story-muted">가볍게 남기는 오늘의 한 장 · 24시간 공개</p>
         </div>
-        <span className="story-member-badge">멤버 전용</span>
       </div>
       <div className="story-strip" aria-label="24시간 스토리 목록">
         <button

@@ -66,6 +66,7 @@ describe("story strip", () => {
       }),
     );
     render(<StoryStrip viewer={viewer} />);
+    expect(screen.queryByText("멤버 전용")).not.toBeInTheDocument();
     const trigger = await screen.findByRole("button", {
       name: "친구님의 스토리 보기",
     });

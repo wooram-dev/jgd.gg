@@ -9,7 +9,7 @@ export default defineConfig({
   test: {
     name: "unit",
     environment: "node",
-    include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
+    include: ["src/**/*.test.ts", "src/**/*.test.tsx", "tests/performance/*.test.ts"],
     setupFiles: ["./tests/helpers/unit-setup.ts"],
     environmentOptions: {
       jsdom: { url: "http://localhost/" },

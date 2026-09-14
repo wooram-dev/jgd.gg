@@ -528,6 +528,24 @@ recent는 achievedAt 내림차순 최대 10개이며 rankEligible 여부와 무�
 - 내부 invalidatedReason, userId와 GameRecord id는 반환하지 않는다.
 - 계정 누락이나 잔액·원장 불일치는 정상값으로 보정하지 않고 500 INTERNAL_ERROR다.
 
+## 12.1 스토리 API
+
+| Method | Path | 인증 / 계약 |
+|---|---|---|
+| GET | /api/v1/stories | 공개 프로필 목록, 로그인은 선택. 선택 query `cursor` UUID 외 field 거부 |
+| POST | /api/v1/stories | ACTIVE·same-origin 필수. `Idempotency-Key` UUID와 raw image body |
+| GET | /api/v1/stories/{storyId}/image | 로그인 필수. 선택 query `size=image\|thumbnail` (기본 image) |
+
+목록의 data는 `{ items, serverNow, nextCursor }`다. 단일 사진 DTO는 `{ id, displayName, avatarUrl, isViewer, createdAt, expiresAt }`이며 avatarUrl은 작성자의 Discord 프로필 URL 또는 null이다. items는 이 DTO에 `stories: 단일 사진 DTO[]`를 추가한 작성자별 묶음이다. 묶음의 최상위 id/시각은 해당 작성자의 최신 유효 사진을 가리키며 stories는 `(createdAt ASC, id ASC)` 순 전체 유효 사진이다. 서버는 내부 작성자 키로 묶고 브라우저에 userId를 공개하지 않는다.
+
+작성자별 최신 사진 `(createdAt DESC, id DESC)` 순 30명씩 페이지를 나누고 각 작성자의 사진은 같은 페이지에 전부 포함한다. cursor는 이전 페이지 마지막 묶음의 최신 사진 UUID이며 다음 페이지가 없으면 nextCursor는 null이다. 비로그인은 isViewer가 false이며 사진 byte·내부 userId는 반환하지 않는다. 만료되거나 BANNED 작성자의 스토리는 제외한다. 클라이언트는 serverNow 기준으로 각 사진의 만료를 갱신한다.
+
+게시 Content-Type은 image/jpeg, image/png, image/webp 중 하나이며 JSON 공통 body 제한의 예외로 최대 5MiB raw image를 받는다. 원본 파일명·userId·displayName·createdAt·expiresAt은 입력받지 않는다. 실제 stream 크기와 이미지 디코딩을 검사한다. 최초 성공은 201, 같은 사용자/키 replay는 200이며 data는 `{ story: 단일 사진 DTO }`, meta.idempotentReplay를 제공한다. 재전송은 처음 수락한 사진/시각을 유지한다.
+
+오류: 부적절한 게시 키 400 STORY_UPLOAD_KEY_INVALID, 손상/위장/빈/과대 픽셀/애니메이션 사진 400 STORY_IMAGE_INVALID, 지원하지 않는 Content-Type 415 STORY_IMAGE_INVALID, raw body 초과 413 PAYLOAD_TOO_LARGE, 직전 24시간 내 10장 초과 429 STORY_UPLOAD_LIMIT. 공통 AUTH_REQUIRED, USER_BANNED, ORIGIN_NOT_ALLOWED도 적용한다.
+
+이미지 조회는 만료·미존재·차단 작성자를 404 NOT_FOUND로 처리한다. **원본 조회 옵션은 없다.** 성공만 JSON envelope 예외로 image/jpeg byte와 X-Request-Id, Cache-Control: private, no-store, Vary: Cookie, X-Content-Type-Options: nosniff, Cross-Origin-Resource-Policy: same-origin을 반환한다. 실패는 기존 JSON 오류 envelope다. 목록과 게시도 no-store다.
+
 ## 13. Better Auth 경로
 
 다음은 library가 소유한다.

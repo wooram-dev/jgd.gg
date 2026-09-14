@@ -100,7 +100,7 @@ viewport뿐 아니라 main의 실제 콘텐츠 너비도 container query로 확�
 위에서 아래 순서:
 
 1. 제목: 우리들의 라운지. KST 날짜와 환영 문구
-2. 라운지 일러스트 배너: 별일 없어도, 들렀다 가요. CTA는 오늘의 이야기 만나기
+2. 멤버 사진 스토리: 지금, 우리 이야기. 로그인 여부와 관계없이 내 스토리 추가와 작성자의 원형 프로필 사진 목록을 본다. 비로그인은 스토리나 추가 버튼 클릭 시 로그인 안내 dialog를 본다. 사진은 로그인 후 열람하며 하단에 오늘의 이야기 바로가기를 유지한다.
 3. 오늘의 대화 한 조각: 가벼운 수다·게임 이야기 선택, 질문과 복사 버튼
 4. 오늘의 기록: 실제 TOP 5, 오클릭과 최종 기록, 전체 랭킹 진입
 5. 기다리는 동안, 잠깐 한 판: 기존 number-click 진입
@@ -324,7 +324,8 @@ Game이 플레이 가능하면 game CTA를 제공한다.
 - board의 DOM 순서는 시각 grid 순서와 같다.
 - 완료 cell은 색 외에 check mark와 accessible description을 가진다.
 - 오클릭 flash는 색 외에 오클릭 count text를 갱신한다.
-- modal은 MVP 핵심 흐름에 사용하지 않는다.
+- 게임 핵심 흐름에는 modal을 사용하지 않는다. 사진 스토리 게시·열람은 native dialog로 focus containment, Escape 닫기와 원래 버튼 focus 복구를 제공한다.
+- 스토리는 작성자당 프로필 하나로 표시하며 사진 로드 후 5초 자동 전환과 상단 진행 막대를 제공한다. 사진 좌우 절반의 button과 방향키로 이동하고 일시정지·재생을 제공한다. 숨겨진 탭에서는 재생을 멈춘다. 진행 막대는 live region으로 계속 읽지 않으며 별도 이동 애니메이션 없이 사진을 바꾼다.
 - focus를 임의로 매 cell로 이동하지 않는다.
 - FINISHED 전환 시 결과 heading에 programmatic focus를 한 번 준다.
 - error 전환 시 error heading에 focus한다.
@@ -355,7 +356,7 @@ Playwright 필수 E2E는 390×844와 1280×800이다. 320px은 component/visual 
 
 ## 13. UI Acceptance Criteria
 
-- [ ] 라운지의 첫 CTA는 대화 콘텐츠로 이동하며 미니게임은 보조 영역에 있다.
+- [ ] 라운지 상단에서 멤버 사진 스토리와 대화 콘텐츠로 진입하며 미니게임은 보조 영역에 있다.
 - [ ] 모바일 메뉴가 실제 경로로 이동한 후 닫히며 본문 건너뛰기와 현재 위치 표시를 제공한다.
 - [ ] 대화 주제 선택·복사·권한 거부 복구와 기록 조회의 오류·빈 상태 구분을 검증한다.
 - [ ] 모든 상태 IDLE, READY, PLAYING, SUBMITTING, FINISHED, ERROR가 시각·입력상 구분된다.

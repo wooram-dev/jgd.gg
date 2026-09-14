@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 
 import { Avatar } from "@/components/ui/avatar";
@@ -6,6 +5,7 @@ import { DiscordIcon, Icon } from "@/components/ui/icon";
 import { DailyTopic } from "@/features/lounge/components/daily-topic";
 import { LoungeRecords } from "@/features/lounge/components/lounge-records";
 import { getDailyTopics } from "@/features/lounge/domain/daily-topic";
+import { StoryStrip } from "@/features/stories/components/story-strip";
 import { getNumberClickRanking } from "@/features/ranking/server/ranking-service";
 import { getPageViewer } from "@/lib/auth/page-viewer";
 import { getDatabase } from "@/lib/db/client";
@@ -62,35 +62,9 @@ export default async function HomePage() {
         </span>
       </header>
 
-      <section className="lounge-hero" aria-labelledby="welcome-heading">
-        <div className="hero-copy">
-          <span className="hero-kicker">
-            <span /> 함께라서 더 즐거운 하루
-          </span>
-          <h2 id="welcome-heading">
-            별일 없어도,
-            <br />
-            들렀다 가요.
-          </h2>
-          <p>
-            게임 한 판, 소소한 수다, 어제보다 나은 기록.
-            <br />
-            디스코드 친구들과 이어지는 우리만의 아지트.
-          </p>
-          <a href="#daily-topic" className="button hero-button">
-            오늘의 이야기 만나기 <Icon name="arrow" size={17} />
-          </a>
-        </div>
-        <Image
-          className="lounge-illustration"
-          src="/lounge-room.svg"
-          alt=""
-          width={560}
-          height={360}
-          preload
-        />
-        <span className="hero-caption">GOOD COMPANY. GOOD TIMES.</span>
-      </section>
+      <StoryStrip
+        viewer={viewer ? { displayName: viewer.displayName, status: viewer.status } : null}
+      />
 
       <div className="lounge-columns">
         <div className="lounge-feed">

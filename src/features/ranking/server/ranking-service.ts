@@ -86,6 +86,12 @@ export async function getNumberClickRanking(
 
   const period = getRankingPeriod(input.period, input.now ?? new Date());
   const cte = rankingCte(game.id, game.rankedRulesVersion, period.startsAt, period.endsAt);
+  const viewerFilter = input.viewerId
+    ? Prisma.sql`OR ranked."user_id" = ${input.viewerId}`
+    : Prisma.empty;
+  const pageEnd = input.offset + input.limit;
+  // Compute the global rank once for both the page and viewer. Keep one extra
+  // page row for hasMore; a viewer outside that range must not affect pagination.
   const rows = await database.$queryRaw<RawRankingRow[]>(Prisma.sql`
     ${cte}
     SELECT
@@ -99,32 +105,17 @@ export async function getNumberClickRanking(
       ranked."achieved_at" AS "achievedAt"
     FROM ranked
     JOIN "user" u ON u."id" = ranked."user_id"
+    WHERE (ranked.rank > ${input.offset} AND ranked.rank <= ${pageEnd + 1})
+      ${viewerFilter}
     ORDER BY ranked.rank
-    LIMIT ${input.limit + 1} OFFSET ${input.offset}
   `);
 
-  let viewer: RankingItem | null = null;
-  if (input.viewerId) {
-    const viewerRows = await database.$queryRaw<RawRankingRow[]>(Prisma.sql`
-      ${cte}
-      SELECT
-        ranked.rank,
-        ranked."id" AS "recordId",
-        ranked."user_id" AS "userId",
-        u."discord_display_name" AS "displayName",
-        u."image" AS "avatarUrl",
-        ranked."score_value" AS "finalMs",
-        ranked."mistake_count" AS "mistakeCount",
-        ranked."achieved_at" AS "achievedAt"
-      FROM ranked
-      JOIN "user" u ON u."id" = ranked."user_id"
-      WHERE ranked."user_id" = ${input.viewerId}
-    `);
-    viewer = viewerRows[0] ? mapRankingRow(viewerRows[0], input.viewerId) : null;
-  }
-
-  const hasMore = rows.length > input.limit;
-  const items = rows.slice(0, input.limit).map((row) => mapRankingRow(row, input.viewerId));
+  const viewerRow = rows.find((row) => row.userId === input.viewerId);
+  const viewer = viewerRow ? mapRankingRow(viewerRow, input.viewerId) : null;
+  const hasMore = rows.some((row) => Number(row.rank) === pageEnd + 1);
+  const items = rows
+    .filter((row) => Number(row.rank) > input.offset && Number(row.rank) <= pageEnd)
+    .map((row) => mapRankingRow(row, input.viewerId));
   return {
     gameSlug: NUMBER_CLICK_SLUG,
     period: {

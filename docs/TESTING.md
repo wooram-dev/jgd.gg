@@ -204,6 +204,8 @@ points:
 
 ## 10. API/Integration 필수 matrix
 
+스토리 테스트는 [features/stories.md](features/stories.md)의 Acceptance Criteria에 대응한다. `src/features/stories/server/image.test.ts`, `components/story-strip.test.tsx`, `tests/integration/stories/stories.integration.test.ts`, `tests/e2e/stories.spec.ts`에서 비로그인 접근, BANNED·Origin, 크기·실제 이미지 검증, 중복/동시 게시·한도, 정확한 24시간 경계, 원본 보관·cascade, 미리보기·재시도·dialog focus와 desktop/mobile/compact 흐름을 검증한다. 이미지 성공 응답은 JSON envelope 대신 JPEG와 X-Request-Id header를 검사한다.
+
 ### 10.1 공통
 
 - content type, strict body, body size
@@ -244,6 +246,7 @@ points:
 - old rules, invalid record, BANNED user 제외
 - viewer 안/밖/null
 - pagination validation
+- viewer가 요청 페이지 앞/안/다음 페이지 확인용 한 행/뒤에 있어도 items·hasMore 정확성
 - no-store header
 
 ### 10.5 Auth
@@ -333,7 +336,23 @@ AUTH.md의 테스트 절을 모두 포함한다.
 
 수동 QA 결과는 날짜, 환경, browser, pass/fail, issue link로 남긴다.
 
-### 라운지 UI QA — 2026-09-10
+### 스토리 UI QA — 2026-09-14 정리
+
+- 프로필 목록 변경 뒤 320×700, 390×844, 1280×800에서 로그인·비로그인에 같은 작성자 아바타 표시, 클릭 전 팝업 없음, 스토리/추가 클릭 시 로그인 팝업, Escape·focus 복구, 비로그인 사진 요청 없음과 직접 이미지 API 401을 검증했다. component는 아바타 로드 실패 fallback을, integration은 공개 DTO·만료·차단 작성자 제외를 검증한다.
+- Discord CDN은 로컬 아바타 fixture로 대체한 브라우저 검증이며 실제 업로드 사진은 API로 읽는다. desktop 비로그인 목록과 mobile 로그인 팝업 screenshot을 시각 확인했다.
+- 로컬 mock Discord와 Playwright Chromium의 320×700, 390×844, 1280×800에서 사진 선택·미리보기·게시·열람·Escape 닫기·focus 복구·가로 overflow 검증 PASS.
+- desktop 스토리 목록과 compact 뷰어 screenshot을 시각 확인했다. 발견한 dialog 좌측 정렬은 `margin: auto`로 수정하고 관련 E2E 3개가 PASS했다.
+- API와 실제 PostgreSQL로 정확한 24시간 만료, 이미지 주소 접근 거부, 원본 byte 보존, 동시 게시·재전송과 한도를 검증했다.
+- 실제 Discord 계정으로 사진을 게시하거나 실기기 Safari/Android를 검증하지는 않았다.
+
+### 스토리 묶음·자동 재생 QA — 2026-09-15
+
+- `story-playback.test.tsx`: 이미지 로드 완료 전 대기, 로드 후 5초 경계, 부모 갱신 시 경과 시간 유지, 일시정지·숨겨진 탭의 남은 시간 재개, 이미지 오류 중 자동 넘김 중단, 좌우 버튼·방향키와 종료 후 이벤트 정리 PASS.
+- `story-strip.test.tsx`: 작성자당 프로필 하나, 게시 순서 재생, 수동 이전 뒤 5초 초기화, 다음 작성자 이동과 마지막 자동 닫기·원래 버튼 focus 복구 PASS. 기존 비로그인 팝업·24시간 만료·게시 재시도 검증 유지.
+- `stories.integration.test.ts`: 같은 표시 이름의 서로 다른 31명·62장을 작성자별 30명/1명 페이지로 나누고 각 작성자의 두 사진이 같은 페이지에 시간순으로 포함됨을 검증 PASS. 공개 DTO와 이미지 인증·보존 검증 유지.
+- `tests/e2e/stories.spec.ts`: 실제 사진 두 장 게시 후 단일 프로필, 사진 로드·자동 다음 사진, 좌우 영역 클릭·진행 표시·일시정지, 비로그인 단일 프로필과 로그인 팝업을 320×700, 390×844, 1280×800에서 검증 PASS. compact 뷰어 screenshot을 시각 확인했다. 실제 기기 QA는 미실행이다.
+
+### 기존 라운지 UI QA — 2026-09-10
 
 Windows 로컬 개발 서버, Playwright Chromium에서 확인했다. 기록 목록의 운영 데이터와 실제 OAuth 검증을 대신하지 않는다.
 
@@ -369,6 +388,10 @@ release candidate에서 production 유사 PostgreSQL에 합성 데이터를 넣�
 - EXPLAIN ANALYZE BUFFERS plan
 
 목표는 ARCHITECTURE.md를 따른다. 성능 fixture는 production 개인정보를 포함하지 않는다.
+
+재현 명령은 `pnpm test:performance`, 소규모 도구 점검은 `pnpm test:performance --quick`이다. 로컬 별도 테스트 DB에 실행별 스키마를 만들며 기존 public 데이터는 변경하지 않는다. 서비스 실제 SQL의 EXPLAIN, 포인트 포함 완료 transaction, 격리 스키마 backup/restore를 포함한다. 표본 수·분포·한계·복구 절차는 [DB_OPERATIONS.md](DB_OPERATIONS.md)를 따른다. 원격/운영 DB 실행은 이 자동화가 허용하지 않는다.
+
+최근 실행 환경·수치·회귀 test·남은 출시 검증은 [PERFORMANCE_RESULTS.md](PERFORMANCE_RESULTS.md)에 기록한다.
 
 ## 14. 명령 계약
 

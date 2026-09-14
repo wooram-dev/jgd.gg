@@ -414,6 +414,24 @@ result_data version 1 예:
 
 포인트 사용은 v1 비범위이므로 SPEND enum이나 사용 요청 table을 미리 만들지 않는다.
 
+## 7.3 story
+
+`Story` / `story`는 `User`와 N:1이며 `user_id`는 ON DELETE CASCADE다. 사진은 별도 파일시스템이나 공개 bucket 없이 PostgreSQL bytea로 보관한다.
+
+| 필드 | 타입 / 제약 |
+|---|---|
+| id | UUID PK, gen_random_uuid() |
+| user_id | text FK user.id |
+| upload_key | UUID, UNIQUE(user_id, upload_key) |
+| original | bytea, 1~5,242,880 bytes |
+| original_type | varchar(32), image/jpeg·image/png·image/webp |
+| image | 표시용 JPEG bytea, 1~5,242,880 bytes |
+| thumbnail | 160×160 JPEG bytea, 1~524,288 bytes |
+| created_at | timestamptz(3), DB 게시 시각 |
+| expires_at | timestamptz(3), CHECK created_at + interval '24 hours' |
+
+최신 목록 인덱스는 `(created_at DESC, id DESC)`, 사용자 게시 한도 인덱스는 `(user_id, created_at DESC)`다. 게시 transaction에서 user row를 FOR UPDATE로 잠근 뒤 상태·게시 키·직전 24시간 게시 수를 확인하고 저장한다. 만료는 읽기 query의 조건이며 GET에서 데이터를 변경하지 않는다. 원본과 파생 이미지는 만료 후에도 보관하고 user 삭제 시 함께 삭제한다. 원본 보관이 누적되므로 운영 DB 용량과 backup 크기를 관찰한다.
+
 ## 8. GameRecord 인덱스
 
 ### 8.1 개인 최근 기록

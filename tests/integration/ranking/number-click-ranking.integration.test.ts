@@ -347,4 +347,39 @@ describe("number-click PostgreSQL ranking", () => {
     expect(ranking?.viewer).toBeNull();
     expect(ranking?.pagination).toEqual({ limit: 100, offset: 0, returned: 0, hasMore: false });
   });
+  it("viewer가 페이지 앞·안·sentinel·뒤에 있어도 목록과 hasMore가 정확하다", async () => {
+    const now = new Date("2026-09-06T03:00:00.000Z");
+    for (let rank = 1; rank <= 6; rank++) {
+      const user = await createTestUser(database, `page-viewer-${rank}`);
+      await createRankingRecord(database, {
+        userId: user.id,
+        achievedAt: now,
+        scoreValue: 4000 + rank,
+      });
+    }
+    for (const rank of [1, 3, 5, 6]) {
+      const result = await getNumberClickRanking(database, {
+        period: "all",
+        limit: 2,
+        offset: 2,
+        viewerId: `page-viewer-${rank}`,
+        now,
+      });
+      expect(result?.items.map((item) => item.rank)).toEqual([3, 4]);
+      expect(result?.viewer?.rank).toBe(rank);
+      expect(result?.pagination).toMatchObject({ returned: 2, hasMore: true });
+    }
+    for (const offset of [4, 6]) {
+      const result = await getNumberClickRanking(database, {
+        period: "all",
+        limit: 2,
+        offset,
+        viewerId: "page-viewer-1",
+        now,
+      });
+      expect(result?.items.map((item) => item.rank)).toEqual(offset === 4 ? [5, 6] : []);
+      expect(result?.viewer?.rank).toBe(1);
+      expect(result?.pagination.hasMore).toBe(false);
+    }
+  });
 });

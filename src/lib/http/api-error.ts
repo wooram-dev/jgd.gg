@@ -1,4 +1,7 @@
 export type ApiErrorCode =
+  | "STORY_IMAGE_INVALID"
+  | "STORY_UPLOAD_KEY_INVALID"
+  | "STORY_UPLOAD_LIMIT"
   | "AUTH_REQUIRED"
   | "AUTH_SESSION_EXPIRED"
   | "USER_BANNED"
@@ -25,6 +28,10 @@ export type ApiErrorCode =
   | "RESULT_BOARD_INVALID";
 
 const DEFAULT_MESSAGES: Record<ApiErrorCode, string> = {
+  STORY_IMAGE_INVALID: "5MB 이하의 정지 사진(JPEG, PNG, WebP)을 선택해 주세요.",
+  STORY_UPLOAD_KEY_INVALID: "사진 게시 요청이 올바르지 않습니다. 사진을 다시 선택해 주세요.",
+  STORY_UPLOAD_LIMIT:
+    "사진은 24시간 동안 최대 10장 게시할 수 있습니다. 잠시 후 다시 시도해 주세요.",
   AUTH_REQUIRED: "로그인이 필요합니다.",
   AUTH_SESSION_EXPIRED: "로그인 세션이 만료되었습니다.",
   USER_BANNED: "이 계정은 공식 기록을 등록할 수 없습니다.",

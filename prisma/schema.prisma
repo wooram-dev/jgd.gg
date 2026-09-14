@@ -79,8 +79,27 @@ model User {
   gameSessions       GameSession[]
   gameRecords        GameRecord[]
   pointAccount       PointAccount?
+  stories            Story[]
 
   @@map("user")
+}
+
+model Story {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId       String   @map("user_id")
+  uploadKey    String   @map("upload_key") @db.Uuid
+  original     Bytes
+  originalType String   @map("original_type") @db.VarChar(32)
+  image        Bytes
+  thumbnail    Bytes
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  expiresAt    DateTime @default(dbgenerated("(CURRENT_TIMESTAMP + interval '24 hours')")) @map("expires_at") @db.Timestamptz(3)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, uploadKey])
+  @@index([createdAt(sort: Desc), id(sort: Desc)])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("story")
 }
 
 model Session {

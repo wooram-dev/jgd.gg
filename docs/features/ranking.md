@@ -156,6 +156,7 @@ LIMIT $5 OFFSET $6;
 - 문자열 연결 raw query와 unsafe API를 금지한다.
 - startsAt/endsAt이 null일 때 OR 조건이 index 사용을 방해하면 all과 bounded query를 두 개의 정적 SQL로 나눈다.
 - ranking list query와 viewer query가 ordering definition을 다르게 쓰지 않는다.
+- 실제 서비스는 한 번 계산한 ranked 결과에서 요청 페이지와 viewer를 함께 반환한다. 다음 페이지 판정용 한 행과 페이지 밖 viewer를 구분해 hasMore와 items에 viewer가 섞이지 않게 한다.
 
 ## 7. 조회 결과
 

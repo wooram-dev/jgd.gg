@@ -11,3 +11,4 @@ test-results/
 src/generated/prisma/
 *.tsbuildinfo
 *.log
+.performance/

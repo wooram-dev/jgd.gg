@@ -47,9 +47,12 @@
 | [TESTING.md](TESTING.md) | 테스트 계층, 격리, 필수 시나리오, 품질 게이트 | 기능 요구사항의 원본 |
 | [AI_RULES.md](AI_RULES.md) | AI 개발자의 작업·검증·보고 절차 | 제품·기술 요구사항 자체 |
 | [STATUS.md](STATUS.md) | 현재 구현·환경·blocker·다음 우선순위 | 요구사항과 과거 작업 상세 |
+| [DB_OPERATIONS.md](DB_OPERATIONS.md) | 격리 성능 측정·backup/restore 검증·migration forward-fix 실행 절차 | 데이터 제약·운영 RPO/RTO의 임의 결정 |
+| [PERFORMANCE_RESULTS.md](PERFORMANCE_RESULTS.md) | 최근 로컬 성능·복원 측정의 환경·결과·미검증 범위 | 성능 목표·운영 환경 보증 |
 | [features/number-click.md](features/number-click.md) | number-click 규칙, 상태 머신, 검증, 수락 기준 | 공통 인증 구현 |
 | [features/ranking.md](features/ranking.md) | 기간, 최고 기록 선정, 정렬, 조회 UX, 수락 기준 | 게임 플레이 상태 |
 | [features/points.md](features/points.md) | 사용자별 포인트의 소유권, 적립·사용 원칙, 원장, UX와 수락 기준 | 실제 DB 필드와 HTTP 스키마 |
+| [features/stories.md](features/stories.md) | 멤버 사진 스토리의 게시·24시간 열람·원본 보관과 수락 기준 | 실제 DB 필드와 HTTP 스키마 |
 
 ## 4. 작업별 필수 문서
 
@@ -59,12 +62,14 @@
 | 제품 범위·사용자 흐름 | [PRODUCT.md](PRODUCT.md), [UI_GUIDE.md](UI_GUIDE.md) |
 | Next.js 구조·dependency | [ARCHITECTURE.md](ARCHITECTURE.md), [TESTING.md](TESTING.md), 관련 `node_modules/next/dist/docs/` 문서 |
 | DB schema·migration·seed | [DATABASE.md](DATABASE.md), [ARCHITECTURE.md](ARCHITECTURE.md), [TESTING.md](TESTING.md) |
+| DB 성능·출시·복구 준비 | [DB_OPERATIONS.md](DB_OPERATIONS.md), [DATABASE.md](DATABASE.md), [ARCHITECTURE.md](ARCHITECTURE.md), [AUTH.md](AUTH.md), [TESTING.md](TESTING.md), 관련 feature 문서 |
 | API | [API.md](API.md), [DATABASE.md](DATABASE.md), [AUTH.md](AUTH.md), [TESTING.md](TESTING.md) |
 | Discord 로그인·권한 | [AUTH.md](AUTH.md), [DATABASE.md](DATABASE.md), [API.md](API.md), [TESTING.md](TESTING.md) |
 | number-click | [features/number-click.md](features/number-click.md), [API.md](API.md), [DATABASE.md](DATABASE.md), [UI_GUIDE.md](UI_GUIDE.md), [TESTING.md](TESTING.md) |
 | 랭킹 | [features/ranking.md](features/ranking.md), [API.md](API.md), [DATABASE.md](DATABASE.md), [UI_GUIDE.md](UI_GUIDE.md), [TESTING.md](TESTING.md) |
 | 포인트 | [features/points.md](features/points.md), [PRODUCT.md](PRODUCT.md), [AUTH.md](AUTH.md), [DATABASE.md](DATABASE.md), [API.md](API.md), [UI_GUIDE.md](UI_GUIDE.md), [TESTING.md](TESTING.md) |
 | UI·반응형·접근성 | [UI_GUIDE.md](UI_GUIDE.md), 관련 feature 문서, [TESTING.md](TESTING.md) |
+| 사진 스토리 | [features/stories.md](features/stories.md), [PRODUCT.md](PRODUCT.md), [AUTH.md](AUTH.md), [DATABASE.md](DATABASE.md), [API.md](API.md), [ARCHITECTURE.md](ARCHITECTURE.md), [UI_GUIDE.md](UI_GUIDE.md), [TESTING.md](TESTING.md) |
 | bug 수정 | 관련 feature 및 API·DB·Auth 문서, [TESTING.md](TESTING.md) |
 | 코드 리뷰 | 변경 영역의 모든 담당 문서와 Acceptance Criteria |
 | Agent 지침·문서 체계 | 이 문서, [AI_RULES.md](AI_RULES.md), [STATUS.md](STATUS.md), 관련 Git 이력 |

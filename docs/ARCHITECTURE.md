@@ -75,6 +75,7 @@ UI 컴포넌트 라이브러리, 전역 상태 라이브러리, TanStack Query�
 - 로그인·로그아웃처럼 브라우저 상호작용이 필요한 컨트롤
 - 공통 메뉴의 현재 경로 표시와 모바일 메뉴 닫기
 - 라운지 대화 주제 선택·클립보드 복사와 공개 랭킹 재시도
+- 멤버 사진 스토리 업로드·미리보기·열람 dialog와 만료 갱신
 
 Client Component에 Prisma, secret, DB model 전체 객체를 import하지 않는다.
 
@@ -193,6 +194,10 @@ READY와 PLAYING을 나누는 이유는 네트워크 응답 시간을 플레이 
 5. 상위 목록과 로그인 사용자의 행을 반환한다.
 
 ## 8. 상태와 캐시
+
+스토리 이미지 처리는 `sharp 0.35.4`를 직접 의존한다. 기존 Next.js에 포함된 동일 버전이며 Apache-2.0이다. Node 서버에서 실제 디코딩·픽셀 제한·메타데이터 제거·표시용 JPEG/썸네일을 만든다. 클라이언트 bundle에는 포함하지 않는다. MIME 또는 파일 signature만 확인하는 대안은 손상된 파일과 디코딩 자원 제한을 충분히 처리하지 못한다. raw 원본과 파생 이미지는 기존 PostgreSQL에 저장해 외부 storage 운영을 추가하지 않으며, 누적 용량이 커지면 별도 storage 이전을 검토한다.
+
+스토리 이미지는 인증 cookie가 필요한 API를 `Image unoptimized`로 직접 요청해 Next.js 공용 이미지 최적화 cache를 거치지 않는다. 원본은 사용자 API에서 제공하지 않고, 모든 목록·이미지 조회에서 만료를 확인한다. 원본 보관 정책이므로 cleanup worker나 scheduled job은 필요하지 않다.
 
 - 플레이 상태는 브라우저 컴포넌트의 reducer/state machine에 둔다.
 - 인증·공식 세션·기록의 진실은 서버와 DB에 있다.

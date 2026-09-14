@@ -22,6 +22,8 @@ const data: RankingData = {
 describe("라운지의 커뮤니티 기록", () => {
   it("빈 기록과 연결 불가를 구분한다", () => {
     const { rerender } = render(<LoungeRecords initialData={data} initialState="ready" />);
+    expect(screen.getByText("오늘")).toBeVisible();
+    expect(screen.queryByText(/KST/)).not.toBeInTheDocument();
     expect(screen.getByText("오늘의 첫 기록은 누구일까요?")).toBeVisible();
     rerender(<LoungeRecords key="unavailable" initialData={null} initialState="unavailable" />);
     expect(screen.queryByText("오늘의 첫 기록은 누구일까요?")).not.toBeInTheDocument();

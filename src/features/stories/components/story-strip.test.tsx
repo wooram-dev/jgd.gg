@@ -177,6 +177,7 @@ describe("story strip", () => {
     });
     render(<StoryStrip viewer={viewer} />);
     await screen.findByText("오늘의 첫 이야기를 기다려요.");
+    expect(screen.queryByText("24시간 뒤 숨김 · 사진 원본 보관")).not.toBeInTheDocument();
     const trigger = screen.getByRole("button", { name: /내 스토리/ });
     await userEvent.click(trigger);
     expect(screen.getByText(/이후에는 숨겨지며 사진 원본은 서버에 보관/)).toBeVisible();

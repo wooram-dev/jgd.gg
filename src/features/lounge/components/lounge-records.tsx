@@ -49,7 +49,7 @@ export function LoungeRecords({
       <p className="panel-description">오늘 도전한 사람들의 작은 성취를 만나보세요.</p>
       <div className="records-label">
         <span>NUMBER CLICK · TOP 5</span>
-        <span>오늘 · KST</span>
+        <span>오늘</span>
       </div>
       {state === "error" || state === "unavailable" ? (
         <div className="lounge-empty">

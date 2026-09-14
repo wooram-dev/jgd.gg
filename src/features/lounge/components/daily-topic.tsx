@@ -60,7 +60,7 @@ export function DailyTopic({ topics }: { topics: Topic[] }) {
       </div>
       <div className="topic-bottom">
         <span>
-          <Icon name="clock" size={14} /> 매일 새로운 이야기 · KST
+          <Icon name="clock" size={14} /> 매일 새로운 이야기
         </span>
         <button
           className="button button-secondary"

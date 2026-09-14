@@ -356,7 +356,6 @@ export function StoryStrip({
         <p className="story-muted">이 계정은 사진을 게시할 수 없습니다.</p>
       )}
       <div className="story-section-footer">
-        <span>24시간 뒤 숨김 · 사진 원본 보관</span>
         <a href="#daily-topic">오늘의 이야기 만나기 →</a>
       </div>
       {message && (

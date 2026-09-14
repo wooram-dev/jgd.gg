@@ -19,6 +19,8 @@ describe("오늘의 대화 카드", () => {
     const user = userEvent.setup();
     const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
     render(<DailyTopic topics={topics} />);
+    expect(screen.getByText("매일 새로운 이야기")).toBeVisible();
+    expect(screen.queryByText(/KST/)).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "게임 이야기" }));
     expect(screen.getByRole("button", { name: "게임 이야기" })).toHaveAttribute(
       "aria-pressed",

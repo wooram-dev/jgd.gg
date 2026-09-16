@@ -7,9 +7,10 @@ import { Icon, type IconName } from "@/components/ui/icon";
 
 const links: { href: string; label: string; icon: IconName }[] = [
   { href: "/", label: "라운지", icon: "home" },
+  { href: "/멤버", label: "게임 프로필", icon: "user" },
   { href: "/rankings/number-click", label: "커뮤니티 랭킹", icon: "trophy" },
   { href: "/games/number-click", label: "미니게임", icon: "game" },
-  { href: "/me", label: "내 기록", icon: "user" },
+  { href: "/내정보", label: "내 정보", icon: "user" },
 ];
 
 export function SiteNavigation({ mobile = false }: { mobile?: boolean }) {
@@ -21,7 +22,7 @@ export function SiteNavigation({ mobile = false }: { mobile?: boolean }) {
         <Link
           key={href}
           href={href}
-          aria-current={pathname === href ? "page" : undefined}
+          aria-current={pathname === href || pathname === encodeURI(href) ? "page" : undefined}
           onClick={() => {
             if (menu.current) menu.current.open = false;
           }}

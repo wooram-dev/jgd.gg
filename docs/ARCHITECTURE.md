@@ -76,6 +76,7 @@ UI 컴포넌트 라이브러리, 전역 상태 라이브러리, TanStack Query�
 - 공통 메뉴의 현재 경로 표시와 모바일 메뉴 닫기
 - 라운지 대화 주제 선택·클립보드 복사와 공개 랭킹 재시도
 - 멤버 사진 스토리 업로드·미리보기·열람 dialog와 만료 갱신
+- 게임 프로필 입력·저장·삭제와 멤버 목록 필터·페이지 이동
 
 Client Component에 Prisma, secret, DB model 전체 객체를 import하지 않는다.
 
@@ -98,7 +99,8 @@ Client Component에 Prisma, secret, DB model 전체 객체를 import하지 않�
 │  │  │  ├─ page.tsx
 │  │  │  ├─ games/number-click/page.tsx
 │  │  │  └─ rankings/number-click/page.tsx
-│  │  ├─ (account)/me/page.tsx
+│  │  ├─ (account)/me/page.tsx       # /내정보를 rewrite해 제공
+│  │  ├─ (account)/members/page.tsx  # /멤버를 rewrite해 제공
 │  │  ├─ api/auth/[...all]/route.ts
 │  │  ├─ api/v1/
 │  │  ├─ auth/error/page.tsx
@@ -229,8 +231,10 @@ READY와 PLAYING을 나누는 이유는 네트워크 응답 시간을 플레이 
 | BETTER_AUTH_URL | canonical origin | 금지 |
 | DISCORD_CLIENT_ID | OAuth application id | 서버에서만 사용 |
 | DISCORD_CLIENT_SECRET | OAuth secret | 금지 |
+| DISCORD_BOT_TOKEN | 게임 프로필 멤버 확인용 기존 bot token, 해당 기능에 필요 | 금지 |
+| TARGET_GUILD_ID | 게임 프로필의 단일 대상 Discord 서버 ID, 해당 기능에 필요 | 금지 |
 
-테스트 전용 변수는 TESTING.md를 따른다. 환경 변수는 시작 시 Zod로 검증하며 누락되면 서버가 명확한 오류로 시작 실패해야 한다. secret 값을 log하지 않는다.
+테스트 전용 변수는 TESTING.md를 따른다. 환경 변수는 Zod로 검증한다. 공통 필수값 누락은 시작 실패이며, 게임 프로필 전용 두 값은 미설정 시 그 기능만 503으로 차단한다. secret 값을 log하지 않는다. 멤버 검사·메모리 재사용·외부 오류 처리는 AUTH.md를 따른다.
 
 ## 11. 오류와 관측성
 

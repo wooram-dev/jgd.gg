@@ -142,7 +142,7 @@ test("mock Discord 로그인과 desktop 공식 완료·페널티·재도전·랭
   await expect(viewerRow.getByText("내 기록", { exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "보유 포인트 10 P" })).toBeVisible();
 
-  await page.goto("/me");
+  await page.goto("/내정보");
   await expect(page.getByRole("heading", { name: "내 포인트" })).toBeVisible();
   await expect(page.getByText("10 P", { exact: true }).last()).toBeVisible();
   await expect(page.getByText("숫자 순서대로 누르기 공식 완료")).toBeVisible();

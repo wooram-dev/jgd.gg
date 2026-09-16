@@ -169,7 +169,7 @@ Discord provider 계정의 안정 ID를 저장한다.
 - 한 user에 Discord account 하나만 허용하는 partial UNIQUE(user_id) WHERE provider_id = 'discord'
 - account identity strategy는 provider-id로 고정한다.
 
-JGD.GG는 callback 이후 Discord API를 호출하지 않으므로 provider token을 지속 저장하지 않는다. auth library가 callback 중 임시 저장하면 callback 완료 hook에서 null로 지운다.
+callback 이후 멤버 검사는 서버 전용 bot token으로 수행하며 사용자 provider token을 지속 저장하지 않는다. auth library가 callback 중 임시 저장하면 callback 완료 hook에서 null로 지운다.
 
 ### 4.4 verification
 
@@ -431,6 +431,24 @@ result_data version 1 예:
 | expires_at | timestamptz(3), CHECK created_at + interval '24 hours' |
 
 최신 목록 인덱스는 `(created_at DESC, id DESC)`, 사용자 게시 한도 인덱스는 `(user_id, created_at DESC)`다. 게시 transaction에서 user row를 FOR UPDATE로 잠근 뒤 상태·게시 키·직전 24시간 게시 수를 확인하고 저장한다. 만료는 읽기 query의 조건이며 GET에서 데이터를 변경하지 않는다. 원본과 파생 이미지는 만료 후에도 보관하고 user 삭제 시 함께 삭제한다. 원본 보관이 누적되므로 운영 DB 용량과 backup 크기를 관찰한다.
+
+## 7.4 game_profile와 game_profile_entry
+
+`GameProfile`은 사용자당 하나의 멤버 카드이며 게임 기록용 `Game` catalog와 분리한다.
+
+| 테이블/필드 | 타입·제약 |
+|---|---|
+| game_profile.id | UUID PK, gen_random_uuid() |
+| game_profile.user_id | text UNIQUE, FK user.id ON DELETE CASCADE |
+| game_profile.created_at, updated_at | timestamptz(3), 최초 생성·마지막 저장 시각 |
+| game_profile_entry.profile_id | UUID FK game_profile.id ON DELETE CASCADE |
+| game_profile_entry.game | varchar(16), CHECK lol·pubg·overwatch |
+| game_profile_entry.nickname | varchar(64), 필수, trim된 1~64자, 제어문자·꺾쇠 금지 |
+| game_profile_entry.tier | nullable varchar(32), 값이 있으면 trim된 1~32자, 제어문자·꺾쇠 금지 |
+
+entry PK는 `(profile_id, game)`로 중복 게임과 3개 초과를 막는다. 목록 인덱스는 `(created_at DESC, id DESC)`다. 서버는 카드당 최소 한 게임을 저장하며 사용자 row를 FOR UPDATE한 transaction 안에서 ACTIVE 상태 확인·프로필 upsert·항목 전체 교체를 처리한다. 전체 삭제도 같은 사용자 lock을 사용한다. 실패는 기존 카드·항목까지 rollback한다. 나중에 직렬 처리된 요청이 앞선 전체 카드를 대체한다.
+
+검증된 계정·티어 field는 없다. 사용자 입력 출처는 API 상수이며 수정 이력·외부 게임 token·membership 영구 상태는 저장하지 않는다. 직접 삭제와 user 삭제는 항목까지 cascade된다. 서버 탈퇴는 노출을 중단하고 삭제하지 않는다. 기존 데이터를 변경하지 않는 additive migration을 사용한다.
 
 ## 8. GameRecord 인덱스
 

@@ -267,6 +267,20 @@ AUTH.md의 테스트 절을 모두 포함한다.
 
 ## 11. E2E 필수 흐름
 
+게임 프로필은 [features/game-profiles.md](features/game-profiles.md)의 GP-1~8을 검증한다.
+
+| 수락 기준 | 테스트 |
+|---|---|
+| GP-1·2·5·6·7 | `tests/integration/game-profiles/game-profiles.integration.test.ts`: CRUD·소유권·추가 필드·Origin·크기·동시 저장·rollback·필터·페이지·DB 제약·cascade |
+| GP-2 | `src/features/game-profiles/schemas/profile.test.ts`: 필수·선택·길이·중복·지원 게임·숨은 문자·추가 필드 |
+| GP-4 | `src/lib/auth/guild-membership.test.ts`: canonical ID 응답 일치·60초 만료·pending/bot/guest·잘못된 응답·설정 누락·429/5xx·timeout 오류·mock test guard |
+| GP-3·8 | game-profiles component 테스트: 사용자 입력 표시·입력 유지·재시도·취소·삭제 확인·이중 제출·권한 상실 |
+| GP-1·3·4·6·8 | `tests/e2e/game-profiles.spec.ts`: 실제 mock OAuth·PostgreSQL·desktop/mobile/320px 등록·수정·필터·삭제·비로그인/비멤버 차단 |
+
+한글 페이지 주소는 같은 E2E에서 `/내정보`·`/멤버`의 로그인 복귀·메뉴 활성 표시와 기존 `/me`·`/members`의 308 이동·query 보존·프로필 fragment 보존을 검증한다. `return-to.test.ts`는 한글·인코딩된 내부 주소가 중복 인코딩되지 않는지 확인한다.
+
+실제 Discord를 CI에서 호출하지 않는다. membership unit은 외부 HTTP만 fixture로 대체하며 integration은 canonical 계정 조회·권한·DB를 실제로 검증한다. 실제 bot token 설정·멤버/비멤버 확인은 배포 전 수동 smoke 대상이다.
+
 ### 11.1 Guest
 
 라운지 추가 흐름 (`tests/e2e/lounge.spec.ts`):
@@ -292,7 +306,7 @@ AUTH.md의 테스트 절을 모두 포함한다.
 5. 1~25 완료
 6. 실제 시간 + 500ms 결과
 7. 개인 최고와 순위
-8. +10P 적립 결과와 header·/me 확정 잔액·최근 내역
+8. +10P 적립 결과와 header·/내정보 확정 잔액·최근 내역
 9. 다시 하기
 10. 새 session/board 확인
 
@@ -335,6 +349,16 @@ AUTH.md의 테스트 절을 모두 포함한다.
 - 두 tab에서 공식 시작과 이전 tab 완료
 
 수동 QA 결과는 날짜, 환경, browser, pass/fail, issue link로 남긴다.
+
+### 게임 프로필 QA — 2026-09-16
+
+- 페이지 한글화 후 unit/component 180개, 전체 E2E 24개 PASS/기존 비대상 6개 skip, lint·format check·typecheck·production build PASS. 별도 로컬 production 서버에서 기존 두 주소의 308·query 보존과 한글 페이지의 로그인 복귀 주소를 확인했다. API·DB 계약 변경은 없으며 이번 주소 변경에서 integration은 재실행하지 않았다.
+- 최초 한글 폴더 직접 라우팅은 개발 서버에서 404가 발생했다. 영문 내부 페이지에 한글 URL rewrite를 적용해 수정했다. 최초 전체 E2E는 경로 관련 4건과 설정 변경·서버 재시작 중 스토리 1건이 실패했으며, 변경 완료 후 테스트·timeout 완화 없이 단독 전체 재실행해 통과했다. 최초 typecheck의 이전 경로 생성 타입 오류도 Next 타입 재생성 후 통과했다.
+- GP-1~8 관련 schema·component·membership unit과 PostgreSQL integration PASS. 전체 unit/component 178개, integration 39개 PASS.
+- 전체 E2E 24개 PASS/기존 비대상 조합 6개 skip. 게임 프로필은 desktop 1280×800, mobile 390×844, compact 320×700에서 등록·새로고침 후 유지·수정·게임 항목 제거·필터·삭제·권한 차단을 검증했다.
+- desktop/mobile 카드와 compact 입력 화면 screenshot을 확인했다. 티어 선택 안내 줄바꿈·단일 카드 폭을 조정한 뒤 전체 E2E를 다시 통과했다.
+- production build PASS. 별도 로컬 production 모드에서 mock OAuth 404, 비로그인 `/api/v1/game-profiles`와 `/api/v1/me/game-profile` 401 확인. 실제 bot/API·실기기·실서비스 DB 적용은 미검증이다.
+- lint·format check·typecheck PASS. 최초 typecheck의 테스트 query 옵션 오류는 수정 후 재검증했다. 최초 production smoke 명령의 빈 `E2E_AUTH_MODE`는 env 검증에 거부됐으며, 변수를 제거한 정상 production 설정으로 재검증했다.
 
 ### 스토리 UI QA — 2026-09-14 정리
 

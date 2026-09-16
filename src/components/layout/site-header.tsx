@@ -43,13 +43,13 @@ export async function SiteHeader() {
               {pointsBalance !== null ? (
                 <Link
                   className="header-points"
-                  href="/me#points"
+                  href="/내정보#points"
                   aria-label={`보유 포인트 ${pointsBalance.toLocaleString("ko-KR")} P`}
                 >
                   {pointsBalance.toLocaleString("ko-KR")} P
                 </Link>
               ) : null}
-              <Link className="viewer-link" href="/me">
+              <Link className="viewer-link" href="/내정보">
                 <Avatar name={viewer.displayName} src={viewer.image} size={32} />
                 <span>{viewer.displayName}</span>
               </Link>

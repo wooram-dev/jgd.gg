@@ -11,7 +11,8 @@
 - 실제 Discord 이메일: 요청·저장하지 않음
 - Discord access/refresh token: callback 후 영구 저장하지 않음
 - auth session: DB-backed opaque cookie session
-- account linking, email/password, profile editing: 비활성
+- account linking, email/password, Discord identity profile editing: 비활성
+- 수동 게임 프로필: ACTIVE 대상 서버 멤버에게만 등록·조회·수정·삭제 허용
 - user.status가 BANNED이면 새 session과 게임 mutation 거부
 
 ## 2. 왜 Better Auth인가
@@ -42,7 +43,7 @@
 - wildcard redirect URI를 사용하지 않는다.
 - client secret은 secret manager 또는 배포 환경 변수에만 저장한다.
 - secret은 NEXT_PUBLIC 접두사를 사용하지 않는다.
-- Discord bot을 MVP에서 생성·초대할 필요가 없다.
+- 일반 OAuth에는 bot이 필요하지 않다. 게임 프로필 멤버 검사는 대상 서버에 있는 기존 bot의 서버 전용 token을 사용한다.
 - bot, guilds, guilds.members.read, email scope를 요청하지 않는다.
 - OAuth consent에는 identify만 보여야 한다.
 
@@ -109,7 +110,7 @@ Better Auth의 mapProfileToUser는 additional field를 provider input으로 처�
 - email/password signup을 비활성화한다.
 - account link와 unlink를 비활성화한다.
 - Better Auth의 사용자 주도 update-user endpoint를 global before hook에서 항상 거부한다.
-- JGD.GG /api/v1에는 프로필 수정 endpoint를 만들지 않는다.
+- JGD.GG /api/v1에는 Discord identity 수정 endpoint를 만들지 않는다. 별도 게임 프로필 입력은 Discord identity를 변경하지 않는다.
 - user.status는 input false인 server-owned field로 선언한다.
 - discord display field는 authorization이나 session 소유권 판단에 사용하지 않는다.
 - canonical Discord identity는 library가 검증하고 account의 UNIQUE(issuer, accountId)에 저장한 값만 사용한다.
@@ -191,7 +192,8 @@ local HTTP에서만 Secure false를 허용하며 NODE_ENV production에서는 fa
 | 공식 session 생성 | 거부 | 허용 | 403 |
 | 공식 session 시작·완료 | 거부 | 본인 session만 | 403 |
 | 개인 통계 | 거부 | 본인만 | 본인 조회 허용 |
-| 프로필 수정 | 없음 | 없음 | 없음 |
+| Discord 이름·아바타 수정 | 없음 | 없음 | 없음 |
+| 게임 프로필 등록·조회·수정·삭제 | 거부 | 대상 서버 멤버만 | 거부 |
 | 운영자 무효화·ban UI | MVP 없음 | 없음 | 없음 |
 
 BANNED user의 과거 GameRecord는 rank query에서 제외한다. 기록은 감사 목적으로 DB에 남는다.
@@ -229,37 +231,23 @@ BANNED user의 과거 GameRecord는 rank query에서 제외한다. 기록은 감
 
 Discord 원본 오류나 query 전체를 그대로 표시하지 않는다.
 
-## 12. 대상 Discord 서버 멤버 정책 비교
+## 12. 게임 프로필 전용 대상 서버 멤버 검사
 
-### 12.1 MVP 선택: 모든 Discord 계정 허용
+기존 로그인·홈·게임·랭킹은 모든 Discord 계정 정책을 유지한다. 게임 프로필 API에만 다음 검사를 추가한다.
 
-장점:
+1. DB의 ACTIVE 사용자와 canonical `account.accountId` (`providerId=discord`, `issuer=local:oauth:discord`)를 확인한다. request의 사용자 ID·게임 닉네임은 권한 근거로 쓰지 않는다.
+2. 서버 환경 `DISCORD_BOT_TOKEN`, `TARGET_GUILD_ID`로 `GET /guilds/{guildId}/members/{discordId}`를 호출한다. 전체 서버·멤버 목록과 사용자 OAuth token은 수집하지 않는다.
+3. 응답의 user.id가 요청 ID와 일치해야 한다. pending, bot, 음성 초대 guest(flags의 IS_GUEST)는 접근할 수 없다.
+4. 정확한 404/10007(Unknown Member)만 비멤버다. 설정 누락·timeout·잘못된 응답·401·403·다른 404·429·5xx는 503으로 차단한다. 원본 오류·token·전체 응답은 저장하거나 로그에 남기지 않는다.
+5. 프로세스 메모리에 서버/Discord ID별 결과를 최대 60초·1000건 재사용한다. 만료된 성공 결과로 장애를 우회하지 않는다. 탈퇴 반영은 최대 60초 지연될 수 있다. DB에 membership을 영구 저장하지 않는다.
+6. 호출은 5초 timeout, redirect 거부, no-store를 사용한다. 동일 ID의 진행 중 확인은 합치며 429의 Retry-After 동안 새 호출을 중단한다.
+7. 목록은 작성자의 멤버 자격도 확인하고 BANNED·탈퇴 작성자를 숨긴다. 외부 확인은 3명씩 진행한다. 일시 장애를 빈 목록으로 바꾸지 않는다.
 
-- identify 한 scope로 최소 권한을 지킨다.
-- bot token, guild API, membership cache가 없다.
-- 로그인 실패 지점과 운영 부담이 적다.
+프로필 데이터는 인증된 API에서만 전달하며 페이지 HTML에는 게임 닉네임·티어를 넣지 않는다. 응답은 no-store다. 이미 전달한 데이터를 회수한다고 보장하지 않는다. 보존·삭제는 [features/game-profiles.md](features/game-profiles.md)를 따른다. BANNED·탈퇴 사용자의 삭제 요청은 기존 운영 문의로 처리한다.
 
-단점:
+E2E에서는 `NODE_ENV=test`와 `E2E_AUTH_MODE=mock-discord`가 동시에 참일 때만 고정 OAuth fixture 한 명을 멤버로 판정한다. 브라우저 입력으로 켜거나 임의 ID를 허용하지 않는다.
 
-- 대상 서버 밖 사용자가 공식 랭킹에 참여할 수 있다.
-
-MVP 목표에는 이 trade-off가 적합하다.
-
-### 12.2 향후 선택: server-side bot membership 확인
-
-커뮤니티 전용성이 필요하다는 운영 근거가 생기면 다음 방식만 사용한다.
-
-1. 운영자가 JGD.GG bot을 대상 guild에 설치한다.
-2. bot token과 TARGET_GUILD_ID를 서버 secret으로 저장한다.
-3. OAuth 성공 직전 또는 첫 session 생성 전, 서버가 Discord guild member endpoint로 account.accountId를 조회한다.
-4. member면 user의 server-owned membership 상태와 checkedAt을 갱신한다.
-5. 404면 공식 플레이를 거부하고 서버 가입 안내를 보여준다.
-6. Discord 429/5xx이면 membership 없음으로 영구 저장하지 않고 일시 오류를 반환한다.
-7. TTL은 15분부터 시작하고 실제 rate limit을 보고 조정한다.
-
-guilds user scope 방식은 사용자의 전체 서버 목록 접근과 access token 보존이 필요해 개인정보와 복잡성이 커지므로 권장하지 않는다. target guild 하나의 membership만 확인하는 목적에는 bot 조회가 더 좁다.
-
-이 향후 모드에는 별도 요구사항, schema migration, Discord policy 검토가 필요하다. MVP에 빈 membership column이나 bot 코드를 미리 만들지 않는다.
+공식 근거: [Discord Get Guild Member](https://docs.discord.com/developers/resources/guild#get-guild-member), [멤버 구조·pending·flags](https://docs.discord.com/developers/resources/guild#guild-member-object), [Unknown Member 오류](https://docs.discord.com/developers/topics/opcodes-and-status-codes#json).
 
 ## 13. 개인정보와 보존
 
@@ -273,6 +261,7 @@ guilds user scope 방식은 사용자의 전체 서버 목록 접근과 access t
 | 가입·갱신 시각 | 운영과 동기화 |
 | 게임 session·record | 기록 검증과 랭킹 |
 | 직접 제출한 스토리 사진 원본·파생 이미지·게시 시각 | 로그인 멤버 사진 공유와 요청한 원본 보관 |
+| 직접 입력한 게임별 닉네임·선택 티어·등록/수정 시각 | 대상 서버 멤버에게 게임 프로필 제공, 직접 삭제 또는 계정 삭제 시 제거 |
 
 수집하지 않는 정보:
 
@@ -328,7 +317,8 @@ guilds user scope 방식은 사용자의 전체 서버 목록 접근과 access t
 - [ ] 실제 email, guild 목록, token, IP, user agent가 DB에 남지 않는다.
 - [ ] account identity가 provider-id와 Discord account id로 안정적으로 연결된다.
 - [ ] 최초·반복 로그인에서 profile mapping이 갱신된다.
-- [ ] 사용자 주도 profile update, account link, email/password가 동작하지 않는다.
+- [ ] 사용자 주도 Discord identity profile update, account link, email/password가 동작하지 않는다.
+- [ ] 게임 프로필은 대상 서버 멤버만 허용하며 멤버 확인 실패 시 차단하고 원본 Discord 오류·token을 공개하지 않는다.
 - [ ] cookie가 production에서 HttpOnly, Secure, SameSite=Lax, host-only다.
 - [ ] 모든 게임 mutation이 auth와 DB user.status를 확인한다.
 - [ ] 외부 returnTo와 타인 session 접근이 차단된다.

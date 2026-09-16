@@ -1,4 +1,6 @@
 export type ApiErrorCode =
+  | "GUILD_MEMBER_REQUIRED"
+  | "GUILD_MEMBERSHIP_UNAVAILABLE"
   | "STORY_IMAGE_INVALID"
   | "STORY_UPLOAD_KEY_INVALID"
   | "STORY_UPLOAD_LIMIT"
@@ -28,6 +30,9 @@ export type ApiErrorCode =
   | "RESULT_BOARD_INVALID";
 
 const DEFAULT_MESSAGES: Record<ApiErrorCode, string> = {
+  GUILD_MEMBER_REQUIRED: "게임 프로필은 대상 Discord 서버 멤버만 이용할 수 있습니다.",
+  GUILD_MEMBERSHIP_UNAVAILABLE:
+    "Discord 서버 멤버 여부를 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.",
   STORY_IMAGE_INVALID: "5MB 이하의 정지 사진(JPEG, PNG, WebP)을 선택해 주세요.",
   STORY_UPLOAD_KEY_INVALID: "사진 게시 요청이 올바르지 않습니다. 사진을 다시 선택해 주세요.",
   STORY_UPLOAD_LIMIT:

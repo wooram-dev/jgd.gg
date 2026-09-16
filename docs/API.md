@@ -73,7 +73,7 @@
 
 타인의 session 여부를 추측하지 못하게 존재하지 않는 session과 타인 소유 session은 모두 404 NOT_FOUND다.
 
-모든 POST는 same-origin Origin 검사를 통과해야 한다. production에서 Origin이 없거나 BETTER_AUTH_URL origin과 다르면 거부한다. cookie는 AUTH.md의 SameSite 정책을 따른다.
+모든 POST·PUT·DELETE는 same-origin Origin 검사를 통과해야 한다. production에서 Origin이 없거나 BETTER_AUTH_URL origin과 다르면 거부한다. cookie는 AUTH.md의 SameSite 정책을 따른다.
 
 ## 4. Endpoint 요약
 
@@ -87,6 +87,8 @@
 | GET | /api/v1/games/number-click/rankings | 선택 | 기간 랭킹 |
 | GET | /api/v1/me/games/number-click/stats | 필수 | 개인 기록 요약 |
 | GET | /api/v1/me/points | 필수 | 본인 확정 포인트 잔액과 최근 원장 |
+| GET·PUT·DELETE | /api/v1/me/game-profile | ACTIVE·대상 서버 멤버 | 본인 게임 프로필 조회·전체 저장·삭제 |
+| GET | /api/v1/game-profiles | ACTIVE·대상 서버 멤버 | 멤버 게임 프로필 목록 |
 
 연습 플레이는 서버 API를 호출하지 않는다.
 
@@ -546,6 +548,20 @@ recent는 achievedAt 내림차순 최대 10개이며 rankEligible 여부와 무�
 
 이미지 조회는 만료·미존재·차단 작성자를 404 NOT_FOUND로 처리한다. **원본 조회 옵션은 없다.** 성공만 JSON envelope 예외로 image/jpeg byte와 X-Request-Id, Cache-Control: private, no-store, Vary: Cookie, X-Content-Type-Options: nosniff, Cross-Origin-Resource-Policy: same-origin을 반환한다. 실패는 기존 JSON 오류 envelope다. 목록과 게시도 no-store다.
 
+## 12.2 게임 프로필 API
+
+공통 인증에 더해 [AUTH.md](AUTH.md)의 대상 서버 멤버 검사를 적용한다. 비멤버는 403 `GUILD_MEMBER_REQUIRED`, 확인 장애·설정 누락은 503 `GUILD_MEMBERSHIP_UNAVAILABLE`다. BANNED는 조회도 403이며 기존 포인트·기록 조회 정책은 변경하지 않는다. 성공·실패 모두 no-store다.
+
+`GET /api/v1/me/game-profile`은 query를 받지 않고 `{ profile: 카드|null }`을 반환한다.
+
+`PUT /api/v1/me/game-profile`은 4KB 이하의 strict JSON `{ games: [{ game, nickname, tier }] }`로 전체 카드를 저장한다. game은 `lol|pubg|overwatch`, games는 중복 없는 1~3개, nickname은 trim 후 1~64자, tier는 null 또는 trim 후 1~32자다. 제어·숨은 문자와 꺾쇠는 거부한다. 티어 생략은 허용하지 않고 미입력을 null로 보낸다. userId, profileId, displayName, 검증 상태 등 추가 field와 query는 거부한다. 성공은 200 `{ profile: 카드 }`다. 같은 요청을 반복해도 카드는 중복 생성되지 않으며 마지막 직렬 처리된 전체 저장이 남는다.
+
+`DELETE /api/v1/me/game-profile`은 query 없이 strict JSON `{}`를 받아 본인 전체 카드와 항목을 삭제한다. 존재하지 않아도 200 `{ profile: null }`로 반복 가능하다. PUT·DELETE 모두 same-origin 검사를 통과해야 한다.
+
+카드 DTO: `{ id, displayName, avatarUrl, isViewer, source: "SELF_REPORTED", games, updatedAt }`. id는 카드 UUID이며 내부 userId·Discord ID·token은 포함하지 않는다. games는 LoL·PUBG·Overwatch 순이다.
+
+`GET /api/v1/game-profiles`의 선택 query는 `game`과 `cursor`(카드 UUID)뿐이며 추가·중복 query를 거부한다. 반환은 `{ items: 카드[], nextCursor: UUID|null }`이다. 생성 시각 DESC·id DESC로 12개 후보씩 조회하고 해당 페이지 작성자의 멤버 여부를 확인한다. 탈퇴·차단 작성자는 숨긴다. 게임 필터에 일치하는 멤버의 카드에는 그 멤버의 전체 등록 게임을 포함한다. cursor는 마지막 검사한 카드 ID여서 빈 페이지에도 다음 페이지가 있을 수 있다. 삭제된 cursor는 400이며 처음부터 다시 조회한다. 수정은 생성 순서를 바꾸지 않는다. 중간 생성·삭제에 대한 전체 목록 snapshot은 보장하지 않는다.
+
 ## 13. Better Auth 경로
 
 다음은 library가 소유한다.
@@ -558,7 +574,7 @@ recent는 achievedAt 내림차순 최대 10개이며 rankEligible 여부와 무�
 
 정확한 path와 method는 pinned Better Auth 1.7.x 공식 문서를 따른다. 애플리케이션은 /api/v1 아래에 로그인 wrapper endpoint를 중복 만들지 않는다.
 
-MVP UI에서 허용하는 auth 행위는 Discord sign-in, current session read, sign-out뿐이다. email/password, profile update, account link/unlink, account delete 기능을 활성화하지 않는다.
+MVP UI에서 허용하는 auth 행위는 Discord sign-in, current session read, sign-out뿐이다. email/password, Discord identity profile update, account link/unlink, account delete 기능을 활성화하지 않는다. 게임 프로필은 별도 v1 데이터다.
 
 ## 14. 입력과 보안 규칙
 

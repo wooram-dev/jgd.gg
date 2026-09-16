@@ -115,7 +115,7 @@ export default async function HomePage() {
                   <br />
                   오늘의 변화를 확인해 보세요.
                 </p>
-                <Link href="/me" className="button button-primary">
+                <Link href="/내정보" className="button button-primary">
                   내 기록 보러 가기 <Icon name="arrow" size={16} />
                 </Link>
               </>

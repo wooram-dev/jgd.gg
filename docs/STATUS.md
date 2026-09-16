@@ -1,18 +1,21 @@
 # JGD.GG 현재 상태
 
-기준일: 2026-09-15
+기준일: 2026-09-16
 
 이 문서는 다음 작업을 시작할 때 필요한 현재 구현 상태, 환경 제약과 우선순위를 요약한다. 제품·보안·DB·API 동작의 Source of Truth는 [README.md](README.md)가 안내하는 담당 설계 문서이며, 과거 변경은 Git 이력에 보존한다.
 
 ## 구현 상태
 
 - Next.js 기반 애플리케이션과 number-click MVP 코드가 구현돼 있다.
+- 수동 게임 프로필 v1을 구현했다. `/내정보#game-profile`에서 LoL·PUBG·Overwatch의 닉네임·선택 티어를 등록·수정·삭제하고 `/멤버`에서 멤버별 카드와 게임 필터·페이지 이동을 제공한다. 모든 카드에 사용자 입력·미인증 안내를 표시한다. 상세 계약은 [features/game-profiles.md](features/game-profiles.md)를 따른다.
+- 페이지 주소를 `/내정보`, `/멤버`로 한글화했다. 메뉴·프로필·포인트 링크와 로그인 복귀 주소를 맞추고 기존 `/me`, `/members`는 query·fragment를 보존해 308 이동한다. API 경로와 접근 권한은 유지한다.
+- 게임 프로필 API는 canonical Discord ID와 기존 bot의 멤버 조회로 대상 서버의 ACTIVE 멤버만 허용한다. 탈퇴·차단 작성자를 숨기고 멤버 확인 실패는 차단한다. 기존 공개 홈·게임·랭킹과 개인 포인트 권한은 유지한다. Steam·게임 궁합·bot 명령은 이번 구현에 포함하지 않았다.
 - 비로그인 연습 플레이의 unit/component 및 desktop/mobile/compact E2E가 통과했다.
 - PostgreSQL schema, migration, 공식 GameSession API, Discord OAuth, 개인 최고와 기간별 랭킹 코드가 구현돼 있다.
 - 랭킹 목록과 내 순위는 전체 순위를 한 번 계산해 함께 반환한다. 로그인 조회 SQL을 3회에서 2회로 줄였으며 페이지 밖 viewer가 목록·hasMore에 영향을 주지 않도록 회귀 검증했다.
 - 포인트 적립 v1이 구현돼 있다. 정책 적용 시각은 2026-09-12 01:12 KST이며 유효한 number-click 공식 완료당 10P, 사용자별 KST 하루 최대 50P를 적립한다. 포인트 사용·상점은 비범위다.
 - 사용자별 0P 계정 자동 생성과 기존 사용자 backfill, append-only 적립·회수 원장, 같은 GameRecord의 정확히 한 번 적립, 잔액·원장 정합성 검사와 기록 무효화 회수가 구현돼 있다.
-- 로그인 사용자는 공식 완료 결과, 공통 header와 `/me`에서 확정 잔액을 확인하고 `/me`에서 최근 변동·빈 상태·조회 오류 재시도를 확인한다. BANNED 사용자는 조회만 가능하다.
+- 로그인 사용자는 공식 완료 결과, 공통 header와 `/내정보`에서 확정 잔액을 확인하고 `/내정보`에서 최근 변동·빈 상태·조회 오류 재시도를 확인한다. BANNED 사용자는 조회만 가능하다.
 - 홈은 커뮤니티 라운지로 구성돼 있다. 오늘의 대화 주제 선택·복사, 실제 TOP 5·주간 랭킹 진입, 개인 영역과 이용 가이드를 제공하며 미니게임은 보조 활동이다.
 - 홈 상단 배너를 멤버 사진 스토리로 교체했다. 목록은 로그인 여부와 관계없이 게시자의 Discord 프로필 사진·이름으로 표시하고 비로그인은 스토리/추가 클릭 시 로그인 안내 팝업을 본다. 실제 사진은 로그인한 사용자만 열람하며 ACTIVE 사용자는 사진 선택·미리보기·게시·이전/다음 열람을 이용한다. 서버 게시 시각부터 24시간 후 목록·사진 접근은 숨기고 원본은 PostgreSQL에 보관한다. 상세 정책은 [features/stories.md](features/stories.md)를 따른다.
 - 스토리는 실제 이미지·크기·픽셀·애니메이션 검증, 메타데이터 없는 표시용 이미지, Origin·계정 상태 검사, 동시 게시 멱등성, 24시간 내 10장 한도와 no-store 이미지 응답을 구현했다. 원본 자동 삭제나 별도 보관함은 없다.
@@ -23,6 +26,11 @@
 
 ## 환경과 미검증 범위
 
+- 2026-09-16 페이지 한글화 후 unit/component 180개, E2E 24개 PASS/기존 비대상 6개 skip, lint·format check·typecheck·production build를 통과했다. `/내정보`·`/멤버`의 로그인 복귀·메뉴 활성 표시·기존 주소 이동을 E2E와 로컬 production smoke로 확인했다. 한글 URL은 내부 영문 페이지로 rewrite하며, 실제 서비스 배포는 수행하지 않았다.
+- 게임 프로필 migration `20260916120000_add_game_profiles`는 전용 `jgd_test` DB에 적용했다. 기존 사용자·기록·포인트·스토리를 바꾸지 않고 카드·게임 항목 테이블을 추가한다. 실제 서비스 DB 적용과 앱 배포는 수행하지 않았다.
+- 웹 프로젝트 `.env`의 `DISCORD_BOT_TOKEN`, `TARGET_GUILD_ID`는 미설정이다. 설정 전 프로필 API는 접근을 차단한다. 실제 bot 자격 증명으로 멤버/비멤버 확인은 미실행이며 [설정 절차](features/game-profiles.md)를 따른다.
+- 2026-09-16 게임 프로필 추가 후 전체 PostgreSQL integration 39개, 단위·component 178개, 전체 E2E 24개 PASS/기존 비대상 6개 skip을 확인했다. E2E는 1280·390·320px에서 등록·재조회·수정·게임 필터·삭제와 비로그인/비멤버 차단을 검증한다. 카드·입력 화면 screenshot을 시각 확인했다.
+- 게임 프로필 포함 lint·format check·typecheck·production build가 통과했다. 별도 로컬 production smoke에서 mock OAuth 경로 404, 비로그인 프로필 API 두 경로 401을 확인했다. 실제 서비스 배포나 사용자 계정 프로필 등록은 하지 않았다.
 - 로컬 PostgreSQL 18.6 서버가 설치돼 있으며 `postgresql-x64-18` 서비스가 자동 시작된다.
 - 로컬 개발 DB `jgd`와 별도 테스트 DB `jgd_test`, 비관리자 애플리케이션 역할 `jgd`가 준비돼 있다. Git에서 제외되는 `.env`에 로컬 전용 임의 자격 증명과 테스트 DB reset 안전 설정을 구성했다.
 - 개발 DB `jgd`와 테스트 DB `jgd_test`에는 `20260906120000_init_auth_and_game_models`, `20260912120000_add_point_accounts_and_ledger` migration과 number-click seed를 적용했다.
@@ -42,12 +50,15 @@
 - 2026-09-12 Codex in-app browser의 기존 인증 세션에서 Enter만으로 공식 게임 시작과 1~25 완료를 확인했고, 결과 heading focus와 개인 최고·오늘·주간·전체 순위 표시를 확인했다. Chrome/Edge의 실제 200% browser zoom과 실기기 Safari/Android QA는 사용자가 수행하기로 했다.
 - 2026-09-13 로컬 Codex in-app browser의 실제 Discord 인증 세션에서 공식 완료당 10P 적립을 확인했다. 완료 직후 결과와 공통 header가 같은 확정 잔액으로 갱신되고 `/me`의 잔액·최신 원장과 일치하며, 이 과정에서 발견한 상위 layout 잔액 지연은 완료 성공 후 Server Component refresh와 E2E 회귀 검증으로 수정했다.
 - Node.js 24.20.0과 pnpm 12.3.4가 프로젝트 고정값에 맞게 준비돼 있다.
+- Cloudflare Tunnel `wooram-llm-tunnel`이 `https://jgd.wooram.online`을 이 PC의 production Next.js 서버(`http://localhost:3001`)로 전달한다. Tunnel Windows 서비스는 자동 시작이며 2026-09-15 공개 주소에서 JGD.GG 홈 응답과 실제 Discord OAuth callback·DB session 생성을 확인했다. 앱 서버는 Discord token 교환을 위한 outbound HTTPS가 허용된 환경에서 실행해야 하며, PC 재부팅 뒤 자동 시작 서비스는 별도로 구성해야 한다.
+- 기존 Discord bot 저장소가 로컬 `C:\Users\jung8\Documents\jgd` 프로젝트로 준비됐다. 관리자 전용 `/서버_구조_내보내기` 명령은 메시지·첨부파일·멤버 목록·secret 없이 카테고리·채널·포럼 태그와 접근 범위를 JSON으로 내보내도록 bot 저장소에 구현했으며, bot 재시작과 실제 서버에서의 명령 실행은 아직 하지 않았다.
 - 로컬 `main` branch가 GitHub의 `origin/main`을 추적한다.
 
 ## 다음 작업 우선순위
 
-1. 출시 전 실제 배포 환경의 사양·pool·네트워크·장기 기록/원장/사진 분포로 HTTP 동시 부하를 검증한다. 로컬 100만 건 서비스 성능·격리 복원·forward-fix 절차 준비는 완료됐으며, 다음 단계는 운영 DB 대상과 backup/PITR·RPO/RTO·보존 기간·담당자 확정 및 격리 복원 검증이다.
-2. 포인트 사용처·상점은 별도 제품 요구사항이 승인된 뒤 정책, 원자적 대상 효과와 멱등성 계약부터 설계한다.
+1. 게임 프로필의 실제 서버 설정·migration 적용과 멤버/비멤버 smoke를 완료한다. 이후 콘텐츠 후보인 `/게임궁합`·Steam 라이브러리 비교는 별도 범위와 bot/JGD.GG 책임 경계를 정한 뒤 구현한다. 배포 사양 검증보다 커뮤니티 콘텐츠를 우선한다.
+2. 출시 전 실제 배포 환경의 사양·pool·네트워크·장기 기록/원장/사진 분포로 HTTP 동시 부하를 검증한다. 로컬 100만 건 서비스 성능·격리 복원·forward-fix 절차 준비는 완료됐으며, 다음 단계는 운영 DB 대상과 backup/PITR·RPO/RTO·보존 기간·담당자 확정 및 격리 복원 검증이다.
+3. 포인트 사용처·상점은 별도 제품 요구사항이 승인된 뒤 정책, 원자적 대상 효과와 멱등성 계약부터 설계한다.
 
 사용자가 수행할 기존 Chrome/Edge 200% browser zoom과 실기기 Safari/Android QA 결과는 [TESTING.md](TESTING.md)에 기록한다.
 

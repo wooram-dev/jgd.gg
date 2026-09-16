@@ -80,8 +80,32 @@ model User {
   gameRecords        GameRecord[]
   pointAccount       PointAccount?
   stories            Story[]
+  gameProfile        GameProfile?
 
   @@map("user")
+}
+
+model GameProfile {
+  id        String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String             @unique @map("user_id")
+  createdAt DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  games     GameProfileEntry[]
+
+  @@index([createdAt(sort: Desc), id(sort: Desc)])
+  @@map("game_profile")
+}
+
+model GameProfileEntry {
+  profileId String      @map("profile_id") @db.Uuid
+  game      String      @db.VarChar(16)
+  nickname  String      @db.VarChar(64)
+  tier      String?     @db.VarChar(32)
+  profile   GameProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@id([profileId, game])
+  @@map("game_profile_entry")
 }
 
 model Story {

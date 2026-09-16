@@ -9,6 +9,11 @@ describe("sanitizeReturnTo", () => {
     );
   });
 
+  it.each(["/내정보#game-profile", "/멤버"])("한글 내부 경로 %s를 보존한다", (path) => {
+    expect(sanitizeReturnTo(path)).toBe(encodeURI(path));
+    expect(sanitizeReturnTo(encodeURI(path))).toBe(encodeURI(path));
+  });
+
   it.each([
     "https://evil.example",
     "//evil.example/path",

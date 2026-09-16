@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { Avatar } from "@/components/ui/avatar";
+import { GameProfilePanel } from "@/features/game-profiles/components/game-profile-panel";
 import { getNumberClickStats } from "@/features/number-click/server/stats-service";
 import { PointsPanel } from "@/features/points/components/points-panel";
 import { getPageViewer } from "@/lib/auth/page-viewer";
@@ -10,9 +11,9 @@ import { formatScore } from "@/lib/time/format-score";
 
 export const dynamic = "force-dynamic";
 
-export default async function MyRecordsPage() {
+export default async function MyInfoPage() {
   const viewer = await getPageViewer();
-  if (!viewer) redirect("/login?returnTo=%2Fme");
+  if (!viewer) redirect(`/login?returnTo=${encodeURIComponent("/내정보")}`);
   const stats = await getNumberClickStats(getDatabase(), { userId: viewer.id });
 
   return (
@@ -24,6 +25,7 @@ export default async function MyRecordsPage() {
           <h1>{viewer.displayName}</h1>
         </div>
       </header>
+      <GameProfilePanel />
       <PointsPanel />
       <section className="stats-grid">
         <StatCard

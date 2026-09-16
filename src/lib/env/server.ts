@@ -9,6 +9,11 @@ const serverEnvSchema = z
     BETTER_AUTH_URL: z.string().url(),
     DISCORD_CLIENT_ID: z.string().min(1),
     DISCORD_CLIENT_SECRET: z.string().min(1),
+    DISCORD_BOT_TOKEN: z.string().min(1).optional(),
+    TARGET_GUILD_ID: z
+      .string()
+      .regex(/^[0-9]{17,20}$/)
+      .optional(),
     E2E_AUTH_MODE: z.literal("mock-discord").optional(),
   })
   .superRefine((value, context) => {

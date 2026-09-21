@@ -498,3 +498,13 @@ Result: PASS
 - [ ] package script와 CI gate가 문서의 이름과 일치한다.
 - [ ] 실패한 test나 미실행 gate를 완료 보고에서 숨기지 않는다.
 - [ ] 포인트 정책 경계, 동시 멱등성, 원장 정합성, 회수와 본인 조회가 실제 PostgreSQL·component·E2E로 검증된다.
+
+## 게임 성향·궁합 검증
+
+[게임 궁합](features/game-compatibility.md)의 GC-1~8에 대응한다.
+
+- `src/features/game-compatibility/domain/compatibility.test.ts`: 가능한 4096개 답변의 축별 다수결·근거와 16유형, 미응답·잘못된 값·희소 배열 거부, 256개 유형 쌍의 비교 대칭성과 복사 요약.
+- `src/features/game-compatibility/components/game-compatibility.test.tsx`: 키보드 radio·단계 focus·무응답 차단·뒤로 이동, 친구 변경·답변 수정·초기화, 복사 중 입력 잠금·실패 후 직접 복사와 재시도.
+- `tests/e2e/game-compatibility.spec.ts`: 비로그인 홈·메뉴·한글 주소 진입, 12문항·친구 비교·복사·새로고침 초기화, 응답 관련 네트워크 요청·영구 저장 없음과 320·390·1280px 가로 넘침.
+
+이 기능은 외부 API·DB·인증 계약을 추가하거나 변경하지 않는다. 기존 공통 탐색과의 회귀는 전체 E2E로 확인한다.

@@ -11,12 +11,14 @@ const nextConfig: NextConfig = {
     return [
       { source: encodeURI("/내정보"), destination: "/me" },
       { source: encodeURI("/멤버"), destination: "/members" },
+      { source: encodeURI("/게임궁합"), destination: "/game-compatibility" },
     ];
   },
   redirects() {
     return [
       { source: "/me", destination: encodeURI("/내정보"), permanent: true },
       { source: "/members", destination: encodeURI("/멤버"), permanent: true },
+      { source: "/game-compatibility", destination: encodeURI("/게임궁합"), permanent: true },
     ];
   },
   images: {

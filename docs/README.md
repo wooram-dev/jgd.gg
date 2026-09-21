@@ -53,6 +53,7 @@
 | [features/ranking.md](features/ranking.md) | 기간, 최고 기록 선정, 정렬, 조회 UX, 수락 기준 | 게임 플레이 상태 |
 | [features/points.md](features/points.md) | 사용자별 포인트의 소유권, 적립·사용 원칙, 원장, UX와 수락 기준 | 실제 DB 필드와 HTTP 스키마 |
 | [features/stories.md](features/stories.md) | 멤버 사진 스토리의 게시·24시간 열람·원본 보관과 수락 기준 | 실제 DB 필드와 HTTP 스키마 |
+| [features/game-compatibility.md](features/game-compatibility.md) | 게임 성향 12문항·16유형·친구 비교·복사와 수락 기준 | 멤버 프로필·Steam 계정 연동 |
 | [features/game-profiles.md](features/game-profiles.md) | 수동 게임 프로필 등록·수정·삭제·열람과 수락 기준 | 실제 DB 필드와 HTTP 스키마 |
 
 ## 4. 작업별 필수 문서
@@ -71,6 +72,7 @@
 | 포인트 | [features/points.md](features/points.md), [PRODUCT.md](PRODUCT.md), [AUTH.md](AUTH.md), [DATABASE.md](DATABASE.md), [API.md](API.md), [UI_GUIDE.md](UI_GUIDE.md), [TESTING.md](TESTING.md) |
 | UI·반응형·접근성 | [UI_GUIDE.md](UI_GUIDE.md), 관련 feature 문서, [TESTING.md](TESTING.md) |
 | 사진 스토리 | [features/stories.md](features/stories.md), [PRODUCT.md](PRODUCT.md), [AUTH.md](AUTH.md), [DATABASE.md](DATABASE.md), [API.md](API.md), [ARCHITECTURE.md](ARCHITECTURE.md), [UI_GUIDE.md](UI_GUIDE.md), [TESTING.md](TESTING.md) |
+| 게임 성향·궁합 | [features/game-compatibility.md](features/game-compatibility.md), [PRODUCT.md](PRODUCT.md), [UI_GUIDE.md](UI_GUIDE.md), [TESTING.md](TESTING.md) |
 | 게임 프로필 | [features/game-profiles.md](features/game-profiles.md), [PRODUCT.md](PRODUCT.md), [AUTH.md](AUTH.md), [DATABASE.md](DATABASE.md), [API.md](API.md), [ARCHITECTURE.md](ARCHITECTURE.md), [UI_GUIDE.md](UI_GUIDE.md), [TESTING.md](TESTING.md) |
 | bug 수정 | 관련 feature 및 API·DB·Auth 문서, [TESTING.md](TESTING.md) |
 | 코드 리뷰 | 변경 영역의 모든 담당 문서와 Acceptance Criteria |

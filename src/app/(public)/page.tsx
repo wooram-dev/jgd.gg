@@ -11,6 +11,7 @@ import { getPageViewer } from "@/lib/auth/page-viewer";
 import { getDatabase } from "@/lib/db/client";
 import { hasServerEnv } from "@/lib/env/server";
 import { SERVICE_TIME_ZONE } from "@/lib/time/ranking-period";
+import compatibilityStyles from "@/features/game-compatibility/components/game-compatibility.module.css";
 
 export const dynamic = "force-dynamic";
 
@@ -69,6 +70,14 @@ export default async function HomePage() {
       <div className="lounge-columns">
         <div className="lounge-feed">
           <DailyTopic topics={topics} />
+          <Link href="/게임궁합" className={compatibilityStyles.teaser}>
+            <p className="eyebrow">FIND YOUR PLAY STYLE</p>
+            <h2>파티 속 나는 어떤 캐릭터?</h2>
+            <p>12개 질문으로 만나는 16가지 게임 성향. 친구와는 어떤 조합일까요?</p>
+            <span>
+              내 게임 성향 알아보기 <Icon name="arrow" size={16} />
+            </span>
+          </Link>
           <LoungeRecords initialData={topFive} initialState={rankingState} />
           <section className="mini-game-section" aria-labelledby="minigame-heading">
             <div className="section-heading">

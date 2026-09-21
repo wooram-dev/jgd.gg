@@ -7,6 +7,7 @@ import { Icon, type IconName } from "@/components/ui/icon";
 
 const links: { href: string; label: string; icon: IconName }[] = [
   { href: "/", label: "라운지", icon: "home" },
+  { href: "/게임궁합", label: "게임 궁합", icon: "spark" },
   { href: "/멤버", label: "게임 프로필", icon: "user" },
   { href: "/rankings/number-click", label: "커뮤니티 랭킹", icon: "trophy" },
   { href: "/games/number-click", label: "미니게임", icon: "game" },

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { Avatar } from "@/components/ui/avatar";
 import { GameProfilePanel } from "@/features/game-profiles/components/game-profile-panel";
 import { getNumberClickStats } from "@/features/number-click/server/stats-service";
+import { TitleShop } from "@/features/title-shop/components/title-shop";
 import { PointsPanel } from "@/features/points/components/points-panel";
 import { getPageViewer } from "@/lib/auth/page-viewer";
 import { getDatabase } from "@/lib/db/client";
@@ -27,6 +28,7 @@ export default async function MyInfoPage() {
       </header>
       <GameProfilePanel />
       <PointsPanel />
+      <TitleShop ownedOnly />
       <section className="stats-grid">
         <StatCard
           label="전체 최고"

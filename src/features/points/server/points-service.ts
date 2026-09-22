@@ -27,7 +27,7 @@ export class PointLedgerIntegrityError extends Error {
   }
 }
 
-async function readConfirmedPointBalance(
+export async function readConfirmedPointBalance(
   transaction: PointTransactionClient,
   userId: string,
 ): Promise<number> {
@@ -60,6 +60,31 @@ async function lockAndVerifyAccount(transaction: PointTransactionClient, userId:
   }
 
   return { balance: await readConfirmedPointBalance(transaction, userId) };
+}
+
+export async function spendTitlePoints(
+  transaction: PointTransactionClient,
+  input: { userId: string; purchaseId: string; price: number },
+): Promise<void> {
+  const account = await lockAndVerifyAccount(transaction, input.userId);
+  if (account.balance < input.price) throw new ApiError(409, "TITLE_BALANCE_INSUFFICIENT");
+  const balanceAfter = account.balance - input.price;
+  await transaction.pointAccount.update({
+    where: { userId: input.userId },
+    data: { balance: balanceAfter },
+  });
+  await transaction.pointTransaction.create({
+    data: {
+      accountUserId: input.userId,
+      type: "SPEND",
+      reason: "TITLE_PURCHASE",
+      amount: -input.price,
+      balanceAfter,
+      titlePurchaseId: input.purchaseId,
+      policyVersion: "title-shop-v1",
+      idempotencyKey: `title-purchase:${input.purchaseId}`,
+    },
+  });
 }
 
 export async function awardOfficialCompletionPoints(

@@ -508,3 +508,12 @@ Result: PASS
 - `tests/e2e/game-compatibility.spec.ts`: 비로그인 홈·메뉴·한글 주소 진입, 12문항·친구 비교·복사·새로고침 초기화, 응답 관련 네트워크 요청·영구 저장 없음과 320·390·1280px 가로 넘침.
 
 이 기능은 외부 API·DB·인증 계약을 추가하거나 변경하지 않는다. 기존 공통 탐색과의 회귀는 전체 E2E로 확인한다.
+
+
+## 칭호 상점 검증
+
+- TS-1·2·3·4·6: `tests/integration/title-shop/title-shop.integration.test.ts`에서 실제 PostgreSQL의 구매·차감·소장·동시 연결·무료 교체/해제·revision·DB 제약·cascade·HTTP 권한/Origin/schema/크기를 검증한다.
+- TS-5·6·8: `src/features/title-shop/server/discord-roles.test.ts`에서 외부 HTTP만 fixture로 대체해 상점 외 역할 보존, 제거 실패 시 추가 중단, timeout 후 성공 재확인, 권한·계층·채널 allow·managed·멤버·429·redaction·mock guard를 검증한다.
+- TS-1·7: `src/features/title-shop/components/title-shop.test.tsx`에서 잔액 부족·판매 준비·확인 dialog·응답 유실 동일 키 재시도·확정 잔액·내 칭호·적용 대기·조회 실패 복구를 검증한다.
+- TS-1·2·7: `tests/e2e/title-shop.spec.ts`에서 실제 mock OAuth·DB·desktop/mobile/compact 구매·응답 유실·header 잔액·교체·해제·새로고침·원장·키보드 dialog·overflow를 검증한다. 실제 Discord API smoke를 대신하지 않는다.
+- 기존 내부 기록 무효화는 구매 후 잔액 부족 시 전액 회수/전체 rollback 정책이 유지됨을 검증한다. 자동 부정 탐지·부채·자동 환불은 추가하지 않는다.

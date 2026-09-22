@@ -63,6 +63,8 @@ curl -sS -o /dev/null -w '%{http_code}\n' https://jgd.wooram.online
 
 게임 프로필에는 OAuth 설정 외에 `DISCORD_BOT_TOKEN`과 `TARGET_GUILD_ID`가 필요합니다. 설정 대응 관계와 실제 멤버·비멤버 확인 절차는 [게임 프로필 설정](docs/features/game-profiles.md#설정과-적용)을 따릅니다.
 
+칭호 상점은 여섯 상품을 각 500P에 판매하며, 역할 설정이 없으면 판매 준비 중으로 표시합니다. `DISCORD_BOT_TOKEN`·`TARGET_GUILD_ID`와 상품별 역할 JSON `DISCORD_TITLE_ROLE_IDS`를 서버에 설정해야 합니다. 상품·역할 검증·migration·실패 복구 절차는 [칭호 상점](docs/features/title-shop.md#역할-설정)을 따릅니다.
+
 ## 검증
 
 ```text

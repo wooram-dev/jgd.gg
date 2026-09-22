@@ -77,6 +77,7 @@ UI 컴포넌트 라이브러리, 전역 상태 라이브러리, TanStack Query�
 - 라운지 대화 주제 선택·클립보드 복사와 공개 랭킹 재시도
 - 멤버 사진 스토리 업로드·미리보기·열람 dialog와 만료 갱신
 - 게임 프로필 입력·저장·삭제와 멤버 목록 필터·페이지 이동
+- 칭호 상점 구매 확인·소장 목록·장착·적용 재시도
 
 Client Component에 Prisma, secret, DB model 전체 객체를 import하지 않는다.
 
@@ -231,8 +232,9 @@ READY와 PLAYING을 나누는 이유는 네트워크 응답 시간을 플레이 
 | BETTER_AUTH_URL | canonical origin | 금지 |
 | DISCORD_CLIENT_ID | OAuth application id | 서버에서만 사용 |
 | DISCORD_CLIENT_SECRET | OAuth secret | 금지 |
-| DISCORD_BOT_TOKEN | 게임 프로필 멤버 확인용 기존 bot token, 해당 기능에 필요 | 금지 |
-| TARGET_GUILD_ID | 게임 프로필의 단일 대상 Discord 서버 ID, 해당 기능에 필요 | 금지 |
+| DISCORD_BOT_TOKEN | 게임 프로필 멤버 확인·칭호 역할 적용용 기존 bot token | 금지 |
+| TARGET_GUILD_ID | 게임 프로필·칭호의 단일 대상 Discord 서버 ID |
+| DISCORD_TITLE_ROLE_IDS | 칭호 여섯 상품 key → 역할 ID JSON, 상점 전용 | 금지 |
 
 테스트 전용 변수는 TESTING.md를 따른다. 환경 변수는 Zod로 검증한다. 공통 필수값 누락은 시작 실패이며, 게임 프로필 전용 두 값은 미설정 시 그 기능만 503으로 차단한다. secret 값을 log하지 않는다. 멤버 검사·메모리 재사용·외부 오류 처리는 AUTH.md를 따른다.
 
@@ -303,3 +305,10 @@ READY와 PLAYING을 나누는 이유는 네트워크 응답 시간을 플레이 
 - [ ] 공식 플레이 완료가 한 DB transaction에서 처리된다.
 - [ ] Redis, queue, 별도 API server가 없다.
 - [ ] 환경 변수 검증, 구조화 log, requestId가 구현된다.
+
+
+## 칭호 상점 실행 경계
+
+catalog·schema·UI·application service·Discord adapter를 `src/features/title-shop`에 둔다. 공개 points server 모듈의 원장 검증·차감 함수를 재사용하고 새 backend·dependency·queue·worker는 추가하지 않는다. 구매의 DB commit 이후 별도 역할 적용 transaction을 실행한다. 이 transaction만 최대 50초의 외부 HTTP를 포함하며, 사용자별 적용 잠금과 durable pending으로 직렬화·실패 복구한다. 각 Discord 요청은 3초 timeout·redirect 거부·no-store이며 429는 Retry-After를 존중한다.
+
+페이지 종료 후 자동 재시도는 없고 사용자가 상점·내 칭호에서 미완료 요청을 재개한다. test/mock-discord 이중 조건에서만 기존 고정 OAuth 사용자의 역할 adapter를 대체한다. 운영에서는 항상 실제 adapter 또는 판매 차단 상태다.

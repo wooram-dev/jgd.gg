@@ -48,6 +48,7 @@ enum GameSessionStatus {
 }
 
 enum PointTransactionType {
+  SPEND
   EARN
   REVERSAL
 
@@ -55,6 +56,7 @@ enum PointTransactionType {
 }
 
 enum PointTransactionReason {
+  TITLE_PURCHASE
   NUMBER_CLICK_COMPLETION
   GAME_RECORD_INVALIDATION
 
@@ -80,6 +82,8 @@ model User {
   gameRecords        GameRecord[]
   pointAccount       PointAccount?
   stories            Story[]
+  titlePurchases     TitlePurchase[]
+  titleEquipment     TitleEquipment?
   gameProfile        GameProfile?
 
   @@map("user")
@@ -264,13 +268,15 @@ model PointTransaction {
   reason               PointTransactionReason
   amount               Int
   balanceAfter         Int                    @map("balance_after")
-  gameRecordId         String                 @map("game_record_id") @db.Uuid
+  titlePurchaseId      String?                @unique @map("title_purchase_id") @db.Uuid
+  gameRecordId         String?                @map("game_record_id") @db.Uuid
   relatedTransactionId String?                @map("related_transaction_id") @db.Uuid
   policyVersion        String                 @map("policy_version") @db.VarChar(64)
   idempotencyKey       String                 @map("idempotency_key") @db.VarChar(128)
   createdAt            DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
   account              PointAccount           @relation(fields: [accountUserId], references: [userId], onDelete: Cascade)
-  gameRecord           GameRecord             @relation(fields: [gameRecordId], references: [id], onDelete: Cascade)
+  titlePurchase        TitlePurchase?         @relation(fields: [titlePurchaseId], references: [id], onDelete: Cascade)
+  gameRecord           GameRecord?            @relation(fields: [gameRecordId], references: [id], onDelete: Cascade)
   relatedTransaction   PointTransaction?      @relation("PointTransactionReversal", fields: [relatedTransactionId], references: [id], onDelete: Cascade)
   reversals            PointTransaction[]     @relation("PointTransactionReversal")
 
@@ -279,4 +285,38 @@ model PointTransaction {
   @@index([accountUserId, createdAt(sort: Desc), id(sort: Desc)])
   @@index([relatedTransactionId])
   @@map("point_transaction")
+}
+
+model TitlePurchase {
+  id             String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId         String @map("user_id")
+  titleKey       String @map("title_key") @db.VarChar(16)
+  price          Int
+  requestId      String @map("request_id") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  user           User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transaction    PointTransaction?
+  desiredBy      TitleEquipment[] @relation("DesiredTitle")
+  appliedBy      TitleEquipment[] @relation("AppliedTitle")
+
+  @@unique([userId, titleKey])
+  @@unique([userId, requestId])
+  @@unique([id, userId])
+  @@map("title_purchase")
+}
+
+model TitleEquipment {
+  userId          String @id @map("user_id")
+  configurationKey String? @map("configuration_key") @db.VarChar(64)
+  desiredTitleKey  String? @map("desired_title_key") @db.VarChar(16)
+  appliedTitleKey  String? @map("applied_title_key") @db.VarChar(16)
+  pending         Boolean @default(false)
+  revision        Int @default(0)
+  retryAt         DateTime? @map("retry_at") @db.Timestamptz(3)
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  user            User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  desiredTitle    TitlePurchase? @relation("DesiredTitle", fields: [userId, desiredTitleKey], references: [userId, titleKey], onDelete: Cascade)
+  appliedTitle    TitlePurchase? @relation("AppliedTitle", fields: [userId, appliedTitleKey], references: [userId, titleKey], onDelete: Cascade)
+
+  @@map("title_equipment")
 }

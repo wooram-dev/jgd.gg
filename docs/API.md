@@ -86,6 +86,10 @@
 | POST | /api/v1/game-sessions/{sessionId}/abandon | 필수 | 미완료 session 포기 |
 | GET | /api/v1/games/number-click/rankings | 선택 | 기간 랭킹 |
 | GET | /api/v1/me/games/number-click/stats | 필수 | 개인 기록 요약 |
+| GET | /api/v1/me/titles | 로그인 | 본인 소장·장착·잔액 조회 |
+| POST | /api/v1/me/titles/purchase | ACTIVE·대상 서버 멤버 | 500P 칭호 구매 |
+| POST | /api/v1/me/titles/equipment | ACTIVE·대상 서버 멤버 | 무료 장착·해제·재적용 요청 |
+| POST | /api/v1/me/titles/sync | ACTIVE | 대기 중 역할 적용 재시도, 외부 멤버 확인 실패 시 대기 유지 |
 | GET | /api/v1/me/points | 필수 | 본인 확정 포인트 잔액과 최근 원장 |
 | GET·PUT·DELETE | /api/v1/me/game-profile | ACTIVE·대상 서버 멤버 | 본인 게임 프로필 조회·전체 저장·삭제 |
 | GET | /api/v1/game-profiles | ACTIVE·대상 서버 멤버 | 멤버 게임 프로필 목록 |
@@ -601,3 +605,26 @@ MVP UI에서 허용하는 auth 행위는 Discord sign-in, current session read, 
 - [ ] 모든 오류 code에 integration test가 있다.
 - [ ] 완료 응답은 확정된 포인트 적립 상태와 잔액을 반환하고 replay에서 같은 기록을 다시 적립하지 않는다.
 - [ ] 본인 포인트 API는 ACTIVE·BANNED 로그인 사용자만 자신의 잔액과 최근 원장을 조회한다.
+
+
+## 칭호 상점 API
+
+모든 endpoint는 query를 거부하고 no-store와 공통 envelope를 사용한다. mutation은 same-origin·strict JSON·4KB 제한이다.
+
+- GET `/api/v1/me/titles`: body 없음. BANNED도 본인 조회 허용.
+- POST `purchase`: `{titleKey, requestId}`. titleKey는 catalog의 여섯 key, requestId는 UUID. 같은 키·같은 상품은 기존 구매를 반환하며 장착 의도를 다시 만들지 않는다. 같은 키·다른 상품은 409.
+- POST `equipment`: `{titleKey: key|null, expectedRevision: integer}`. null은 해제. 소유하지 않은 칭호는 404. 직전 동일 의도의 재전송 외에는 revision이 다르면 409.
+- POST `sync`: `{}`. 대기 중인 동일 의도만 재적용하며 포인트를 사용하지 않는다. 재시도 시각 이전 또는 다른 적용 진행 중이면 현재 상태를 반환한다.
+
+성공 data는 `{balance, enabled, canModify, owned: titleKey[], equipment: {desired, applied, pending, revision, retryAt}}`이다. desired·applied는 key 또는 null, retryAt은 UTC ISO 또는 null이다. canModify는 ACTIVE 계정 여부이며 서버 멤버 판정은 mutation에서 별도 수행한다. enabled는 서버 역할 설정의 유효한 형식·기존 연결 일치를 뜻하며 실제 Discord 상태는 구매 직전 다시 검증한다. 원장 GET의 type에는 SPEND, reason에는 TITLE_PURCHASE를 추가한다.
+
+역할 지급 미완료도 구매가 확정됐다면 200과 pending=true로 반환한다. 5xx/네트워크 응답 유실은 구매 실패 확정을 뜻하지 않으며 같은 키로 재시도한다. Discord·서버·역할 ID, 원본 외부 응답은 DTO에 넣지 않는다.
+
+| HTTP | code | 의미 |
+|---|---|---|
+| 403 | TITLE_MEMBER_REQUIRED | canonical Discord identity 또는 실제 멤버 자격 없음 |
+| 503 | TITLE_SHOP_UNAVAILABLE | 설정·역할 권한·Discord 조회 실패, 연결 변경 |
+| 409 | TITLE_BALANCE_INSUFFICIENT | 500P 미만 |
+| 409 | TITLE_ALREADY_OWNED | 다른 구매 요청으로 이미 소장 |
+| 409 | TITLE_REQUEST_CONFLICT | 구매 키 충돌·오래된 장착 revision |
+| 409 | TITLE_SYNC_PENDING | 먼저 기존 역할 적용을 완료해야 함 |

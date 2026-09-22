@@ -11,6 +11,7 @@ const links: { href: string; label: string; icon: IconName }[] = [
   { href: "/멤버", label: "게임 프로필", icon: "user" },
   { href: "/rankings/number-click", label: "커뮤니티 랭킹", icon: "trophy" },
   { href: "/games/number-click", label: "미니게임", icon: "game" },
+  { href: "/상점", label: "칭호 상점", icon: "spark" },
   { href: "/내정보", label: "내 정보", icon: "user" },
 ];
 

@@ -392,11 +392,12 @@ result_data version 1 예:
 |---|---|---:|---|
 | id | uuid | N | PK, DB gen_random_uuid |
 | account_user_id | text | N | FK point_account.user_id ON DELETE CASCADE |
-| type | PointTransactionType | N | EARN 또는 REVERSAL |
+| type | PointTransactionType | N | EARN·REVERSAL·SPEND |
 | reason | PointTransactionReason | N | 변동 사유 |
 | amount | integer | N | 0이 아닌 signed 증감량 |
 | balance_after | integer | N | 이 변동 직후 확정 잔액, 0 이상 |
-| game_record_id | uuid | N | 원인 GameRecord FK ON DELETE CASCADE |
+| game_record_id | uuid | Y | EARN·REVERSAL에서 필수, 원인 GameRecord FK ON DELETE CASCADE |
+| title_purchase_id | uuid | Y | SPEND에서 필수, UNIQUE·TitlePurchase FK ON DELETE CASCADE |
 | related_transaction_id | uuid | Y | REVERSAL이면 원본 EARN FK |
 | policy_version | varchar(64) | N | 적용 정책 버전 |
 | idempotency_key | varchar(128) | N | 사용자 계정 안의 안정된 처리 key |
@@ -412,7 +413,15 @@ result_data version 1 예:
 - INDEX(account_user_id, created_at DESC, id DESC): 최근 내역 조회
 - INDEX(related_transaction_id)
 
-포인트 사용은 v1 비범위이므로 SPEND enum이나 사용 요청 table을 미리 만들지 않는다.
+칭호 구매는 SPEND·TITLE_PURCHASE·amount=-500·game_record_id null·related_transaction_id null·title_purchase_id not null이다. EARN·REVERSAL은 game_record_id 필수·title_purchase_id null로 기존 제약을 유지한다. 구매 ID와 account_user_id의 복합 FK가 소유자 일치를 강제한다. enum은 별도 migration으로 먼저 commit한 후 후속 migration의 CHECK에서 사용한다.
+
+### 칭호 소장과 장착
+
+- `title_purchase`: UUID id, user_id FK cascade, 상품 key(varchar16 allowlist), price=500, UUID request_id, created_at timestamptz. UNIQUE(user_id,title_key), UNIQUE(user_id,request_id), UNIQUE(id,user_id). 구매 row가 영구 소장권이며 원장은 구매당 최대 하나다.
+- `title_equipment`: user_id PK/FK cascade, desired_title_key·applied_title_key nullable, pending boolean, revision>=0, retry_at nullable timestamptz, configuration_key nullable varchar64, updated_at timestamptz. 두 칭호 모두 (user_id,title_key) 복합 FK로 소유를 보장한다. pending=false이면 desired와 applied는 같고 retry_at은 null이다.
+- 구매·장착은 ACTIVE user의 FOR SHARE → equipment의 FOR UPDATE → 구매 시 point_account의 FOR UPDATE 순으로 잠근다. 구매·SPEND·잔액·새 장착 요청을 함께 commit한다. 원장 합계 불일치는 rollback한다.
+- 외부 역할 적용은 별도 transaction에서 같은 user/equipment lock을 유지하며 최대 50초로 제한한다. 다른 적용은 SKIP LOCKED로 중복 실행하지 않는다. 외부 성공 뒤 DB 실패에도 앞서 commit한 pending은 보존된다. 사용자별 revision으로 오래된 요청을 막는다.
+- User 삭제 시 구매·장착·원장을 함께 cascade한다. 운영자 개별 구매 삭제·환불 API는 없다. 기존 GameRecord 삭제의 cascade 정책은 유지한다.
 
 ## 7.3 story
 

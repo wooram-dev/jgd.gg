@@ -9,6 +9,7 @@ const serverEnvSchema = z
     BETTER_AUTH_URL: z.string().url(),
     DISCORD_CLIENT_ID: z.string().min(1),
     DISCORD_CLIENT_SECRET: z.string().min(1),
+    DISCORD_TITLE_ROLE_IDS: z.string().optional(),
     DISCORD_BOT_TOKEN: z.string().min(1).optional(),
     TARGET_GUILD_ID: z
       .string()

@@ -208,7 +208,7 @@ BANNED user의 과거 GameRecord는 rank query에서 제외한다. 기록은 감
 | 공식 완료 포인트 적립 | 없음 | 서버가 확인한 본인 활동만 | 공식 완료 mutation 403 |
 | 타인 잔액·변동 내역 | 거부 | 거부 | 거부 |
 
-기록 무효화에 따른 회수는 사용자 요청 endpoint가 아니라 서버·운영 절차로만 처리한다. 포인트 사용은 v1 비범위다. 상세 기능 규칙은 [features/points.md](features/points.md), 조회 계약은 API.md를 따른다.
+기록 무효화에 따른 회수는 사용자 요청 endpoint가 아니라 서버·운영 절차로만 처리한다. 포인트 사용은 칭호 상점 구매만 허용한다. 상세 기능 규칙은 [features/points.md](features/points.md), 조회 계약은 API.md를 따른다.
 
 ### 10.2 스토리 권한과 원본 보관
 
@@ -249,12 +249,19 @@ E2E에서는 `NODE_ENV=test`와 `E2E_AUTH_MODE=mock-discord`가 동시에 참일
 
 공식 근거: [Discord Get Guild Member](https://docs.discord.com/developers/resources/guild#get-guild-member), [멤버 구조·pending·flags](https://docs.discord.com/developers/resources/guild#guild-member-object), [Unknown Member 오류](https://docs.discord.com/developers/topics/opcodes-and-status-codes#json).
 
+### 12.1 칭호 상점 권한
+
+본인 소장 조회는 ACTIVE·BANNED 로그인 사용자에게 허용한다. 구매·장착·재적용은 매 요청 DB의 ACTIVE 상태와 canonical Discord account를 확인한다. 서버가 멤버 역할을 직접 조회해 id 일치, pending·bot·guest 제외를 검증하며 멤버 cache를 사용하지 않는다. 확인 장애·설정 오류는 차감 전에 차단한다. Origin·strict schema·4KB 상한·no-store를 적용하며 사용자·역할·서버 ID와 token은 응답에 넣지 않는다.
+
+역할은 서버 설정 allowlist에 등록된 상점 전용 장식 역할만 조작한다. 봇의 역할 관리 권한과 계층, 역할의 서버 권한 0·채널별 허용 없음·unmanaged를 확인한다. 제약·탈퇴·차단·계정 삭제 시 역할 운영 절차와 테스트 전용 고정 identity 대체는 [칭호 상점](features/title-shop.md)을 따른다. OAuth scope와 사용자 token 비저장 정책은 유지한다.
+
 ## 13. 개인정보와 보존
 
 수집 목적:
 
 | 데이터 | 목적 |
 |---|---|
+| 칭호 구매·장착 상태·구매 가격과 시각 | 본인 소장권·Discord 적용과 사용 원장, 사용자 삭제 시 cascade |
 | 내부 user id | 관계와 권한 |
 | Discord account id | 안정된 외부 identity |
 | username, display name, avatar | 랭킹과 프로필 표시 |

@@ -6,8 +6,8 @@ export const pointOverviewDataSchema = z.object({
   transactions: z.array(
     z.object({
       id: z.string().uuid(),
-      type: z.enum(["EARN", "REVERSAL"]),
-      reason: z.enum(["NUMBER_CLICK_COMPLETION", "GAME_RECORD_INVALIDATION"]),
+      type: z.enum(["EARN", "REVERSAL", "SPEND"]),
+      reason: z.enum(["NUMBER_CLICK_COMPLETION", "GAME_RECORD_INVALIDATION", "TITLE_PURCHASE"]),
       amount: z.number().int(),
       balanceAfter: z.number().int().nonnegative(),
       policyVersion: z.string().min(1),

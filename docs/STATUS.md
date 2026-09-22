@@ -1,6 +1,6 @@
 # JGD.GG 현재 상태
 
-기준일: 2026-09-21
+기준일: 2026-09-22
 
 이 문서는 다음 작업을 시작할 때 필요한 현재 구현 상태, 환경 제약과 우선순위를 요약한다. 제품·보안·DB·API 동작의 Source of Truth는 [README.md](README.md)가 안내하는 담당 설계 문서이며, 과거 변경은 Git 이력에 보존한다.
 
@@ -14,7 +14,7 @@
 - 비로그인 연습 플레이의 unit/component 및 desktop/mobile/compact E2E가 통과했다.
 - PostgreSQL schema, migration, 공식 GameSession API, Discord OAuth, 개인 최고와 기간별 랭킹 코드가 구현돼 있다.
 - 랭킹 목록과 내 순위는 전체 순위를 한 번 계산해 함께 반환한다. 로그인 조회 SQL을 3회에서 2회로 줄였으며 페이지 밖 viewer가 목록·hasMore에 영향을 주지 않도록 회귀 검증했다.
-- 포인트 적립 v1이 구현돼 있다. 정책 적용 시각은 2026-09-12 01:12 KST이며 유효한 number-click 공식 완료당 10P, 사용자별 KST 하루 최대 50P를 적립한다. 포인트 사용·상점은 비범위다.
+- 포인트 적립 v1이 구현돼 있다. 정책 적용 시각은 2026-09-12 01:12 KST이며 유효한 number-click 공식 완료당 10P, 사용자별 KST 하루 최대 50P를 적립한다. 2026-09-22에 [칭호 상점](features/title-shop.md)을 구현했다. `/상점`에서 게임별 칭호 여섯 개를 각각 500P로 구매하고 `/내정보#titles`에서 소장 칭호를 무료 교체·해제한다. 여러 개 소장·하나만 장착, 잔액 부족·중복 구매 차단, 환불 불가와 Discord 역할 적용 실패의 무료 재시도를 제공한다. 서비스 DB migration과 공개 배포는 완료했으며 실제 Discord 역할 연결 전까지 판매 준비 중으로 표시한다.
 - 사용자별 0P 계정 자동 생성과 기존 사용자 backfill, append-only 적립·회수 원장, 같은 GameRecord의 정확히 한 번 적립, 잔액·원장 정합성 검사와 기록 무효화 회수가 구현돼 있다.
 - 로그인 사용자는 공식 완료 결과, 공통 header와 `/내정보`에서 확정 잔액을 확인하고 `/내정보`에서 최근 변동·빈 상태·조회 오류 재시도를 확인한다. BANNED 사용자는 조회만 가능하다.
 - 홈은 커뮤니티 라운지로 구성돼 있다. 오늘의 대화 주제 선택·복사, 실제 TOP 5·주간 랭킹 진입, 개인 영역과 이용 가이드를 제공하며 미니게임은 보조 활동이다.
@@ -55,6 +55,23 @@
 - 복구용 이전 빌드 `nLcyWE4N5C1Bma3TiU_p6`는 `/home/wooram/.local/share/jgd-gg/deployments/game-compatibility-sO1lFOAQq-dW9Ea42iS6x/previous-next`에 보존했다. 같은 디렉터리의 `deployment.json`에 빌드 ID·검증 상태를 기록한다. 복구 시 웹 서비스만 중지하고 현재 `.next`를 별도 보존한 뒤 `previous-next`를 저장소 `.next`로 이동해 서비스를 시작하고 확인한다. 보존 폴더에서 직접 실행하면 상대 symlink 기준이 달라지므로 사용하지 않는다.
 - 전체 출시 게이트의 실제 Discord 로그인·실기기 QA·운영 HTTP 동시 부하·운영 backup/PITR 확정은 기존 미검증 항목으로 남는다. 이번 배포는 로그인 없이 동작하는 게임 성향 콘텐츠이며 기존 인증·DB 계약을 변경하지 않는다.
 
+### 칭호 상점 구현·검증 — 2026-09-22
+
+- 구매·장착·재적용 API와 소장·장착 DB 모델, SPEND 원장, 상점·내 칭호 화면을 구현했다. 구매 확정과 외부 역할 적용을 분리하고 적용 대기·revision·재시도 시각을 보존한다. 상점 밖 역할은 유지하며 자동 복구 worker는 없다. 부정 탐지·부채·향후 적립 상계는 추가하지 않았고, 기존 기록 무효화의 잔액 부족 시 전체 rollback을 회귀 검증했다.
+- `pnpm test:coverage`는 unit/component 221개와 기존 coverage gate를 통과했다. `pnpm test:integration`은 전용 `jgd_test`에서 50개를 통과했으며 두 상점 migration도 이 DB에만 적용했다. 동시 구매·중복 차감·응답 유실·원장과 DB 제약·권한·역할 적용 실패와 재시도를 포함한다.
+- 전체 E2E 실행에서 기존 27개 PASS/기존 비대상 6개 skip을 확인했다. 신규 칭호 시나리오의 숨겨진 dialog 문구와 충돌한 selector를 수정한 뒤 해당 시나리오를 desktop/mobile/compact에서 재실행해 3개 모두 통과했다. 구매 응답 유실 후 같은 요청 재시도·무료 교체·해제·새로고침 후 소장 유지·잔액/원장 갱신·가로 넘침·browser 오류를 검증했고 320px screenshot도 시각 확인했다. test 삭제·skip 추가·timeout 완화는 없다.
+- `pnpm typecheck`, `pnpm lint`, `pnpm format:check`, `git diff --check` PASS. 실행 중인 서비스의 `.next`를 보존한 `/tmp/jgd-title-shop-build-9sgu0eon` 복사본에서 최종 production build PASS. 임시 로컬 production 서버에서 홈 200, 비로그인 `/상점`의 올바른 로그인 복귀 307, `/shop` query 보존 308, 칭호 조회·세 mutation API 401, mock OAuth 404를 확인하고 서버를 종료했다.
+- `DISCORD_BOT_TOKEN`·`TARGET_GUILD_ID`·`DISCORD_TITLE_ROLE_IDS`는 현재 미설정이다. 이 상태에서는 판매 준비 중으로 표시하고 구매를 차단한다. 자동 검증은 테스트 전용 Discord 대체와 HTTP mock을 사용하며 실제 서버 역할 생성·지급·제거를 검증하지 않았다. 실제 연결 후 멤버·비멤버와 역할 계층·권한을 확인해야 한다.
+- 서비스 DB·공개 배포·실행 서비스·bot 설정은 변경하지 않았으며 commit·push도 수행하지 않았다. 운영 적용 순서는 [칭호 상점 적용과 복구](features/title-shop.md#적용과-복구)를 따른다.
+
+### 칭호 상점 공개 배포 — 2026-09-22
+
+- 사용자 요청으로 검증된 production 빌드 `KdPWukh-nlKzdYB2MlI9C`를 `jgd-web.service`에 배포했다. 검증 복사본과 현재 소스·lockfile을 대조했으며 차이는 Next.js가 생성한 `next-env.d.ts`의 개발/운영 type 경로뿐이었다. 런타임 symlink와 이전 static asset 12개를 보존했다.
+- 대상 DB는 기존 로컬 PostgreSQL의 `jgd/public`이다. custom-format 사전 백업을 새 격리 DB로 복원해 검증하고 해당 임시 DB만 제거했다. 서비스 중지 후 최종 백업을 추가로 확보한 뒤 상점 migration 두 개를 적용했다. 총 6개 migration이 완료됐고 기존 모든 테이블의 행 수·내용 해시가 일치하며 포인트 잔액/원장 불일치는 0건이다. 신규 nullable 구매 열은 비교에서 제외했다.
+- 로컬·공개 HTTPS의 홈·게임 궁합 200, `/상점` 로그인 복귀 307, `/shop` query 보존 308, 칭호 조회·구매·장착·재적용 API의 비로그인 401, mock OAuth 404를 확인했다. 공개 브라우저의 1280·390·320px 홈·상점 로그인 이동에서 가로 넘침과 runtime 오류가 없었다. 웹 서비스는 active/running·자동 재시작 0회이며 배포 완료 이후 확인 구간의 오류 로그는 0건이다.
+- 복구 자료는 `/home/wooram/.local/share/jgd-gg/deployments/title-shop-KdPWukh-nlKzdYB2MlI9C`에 접근 제한으로 보존했다. `pre-title-shop-final.dump`는 중지 직후 DB 백업, `previous-next`는 이전 빌드 `sO1lFOAQq-dW9Ea42iS6x`, `deployment.json`과 `data-verification.json`은 검증 기록이다. DB는 되돌리지 않는다. 향후 SPEND가 생성된 이후에는 이전 UI로 단순 rollback하지 않고 forward-fix한다.
+- `DISCORD_BOT_TOKEN`·`TARGET_GUILD_ID`·`DISCORD_TITLE_ROLE_IDS`는 미설정이므로 구매는 차단된다. 이번 배포는 실제 로그인 사용자 구매나 Discord 역할 지급 검증을 포함하지 않는다. 역할 연결 후 실제 멤버의 구매·교체·해제 확인이 남는다. bot·Tunnel 설정과 commit·push는 변경하지 않았다.
+
 ### 이전 Windows 환경의 검증 이력
 
 아래 내용은 이전 PC에서 기록한 결과이며 현재 Linux의 서비스 실행 상태를 뜻하지 않는다.
@@ -88,9 +105,11 @@
 
 ## 다음 작업 우선순위
 
+사용자가 요청한 [칭호 상점](features/title-shop.md)의 코드·migration·자동 검증은 완료했다. 서비스 DB migration과 공개 배포까지 완료했다. 실제 판매를 위한 다음 단계는 전용 Discord 역할 여섯 개와 서버 환경 연결, 실제 멤버의 구매·교체·해제 확인이다. 초기 가격은 모두 500P이며 연결 전에는 판매를 열지 않는다.
+
 1. Linux 웹 OAuth 필수값 존재·공개 HTTP 접근·기존 사용자 3명 이관은 확인됐다. 사용자의 2026-09-18 지시로 게임 프로필의 `DISCORD_BOT_TOKEN`·`TARGET_GUILD_ID` 설정과 실제 멤버/비멤버 smoke는 추후로 보류한다. 실제 브라우저 로그인 확인도 미실행 상태다. 설정 절차는 [게임 프로필](features/game-profiles.md#설정과-적용)을 따른다. 재부팅 후 서비스 자동 기동도 별도 확인한다. [게임 성향·궁합 v1](features/game-compatibility.md)의 공개 배포와 브라우저 검증을 완료했다. 다음은 실제 이용 피드백에 따른 질문·유형 문구 개선이다. Steam 라이브러리 비교는 별도 범위 결정 전 비범위로 유지한다. 배포 사양 검증보다 커뮤니티 콘텐츠를 우선한다.
 2. 출시 전 실제 배포 환경의 사양·pool·네트워크·장기 기록/원장/사진 분포로 HTTP 동시 부하를 검증한다. 로컬 100만 건 서비스 성능·격리 복원·forward-fix 절차 준비는 완료됐으며, 다음 단계는 운영 DB 대상과 backup/PITR·RPO/RTO·보존 기간·담당자 확정 및 격리 복원 검증이다.
-3. 포인트 사용처·상점은 별도 제품 요구사항이 승인된 뒤 정책, 원자적 대상 효과와 멱등성 계약부터 설계한다.
+3. 칭호 상점 연결 후 실제 Discord 권한 부족·429·일부 적용 실패의 운영 복구를 확인한다. 구매 소장권과 원장을 보존하며 화면의 무료 재적용을 사용한다. 부정 기록 탐지나 사용 후 회수 정책 확장은 별도 요청 범위로 둔다.
 
 사용자가 수행할 기존 Chrome/Edge 200% browser zoom과 실기기 Safari/Android QA 결과는 [TESTING.md](TESTING.md)에 기록한다.
 

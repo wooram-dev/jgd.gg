@@ -1,4 +1,10 @@
 export type ApiErrorCode =
+  | "TITLE_SHOP_UNAVAILABLE"
+  | "TITLE_MEMBER_REQUIRED"
+  | "TITLE_BALANCE_INSUFFICIENT"
+  | "TITLE_ALREADY_OWNED"
+  | "TITLE_REQUEST_CONFLICT"
+  | "TITLE_SYNC_PENDING"
   | "GUILD_MEMBER_REQUIRED"
   | "GUILD_MEMBERSHIP_UNAVAILABLE"
   | "STORY_IMAGE_INVALID"
@@ -30,6 +36,14 @@ export type ApiErrorCode =
   | "RESULT_BOARD_INVALID";
 
 const DEFAULT_MESSAGES: Record<ApiErrorCode, string> = {
+  TITLE_SHOP_UNAVAILABLE:
+    "칭호 상점이 준비 중이거나 Discord 연결을 확인할 수 없습니다. 잠시 후 다시 시도해 주세요.",
+  TITLE_MEMBER_REQUIRED: "칭호 구매와 장착은 대상 Discord 서버 멤버만 이용할 수 있습니다.",
+  TITLE_BALANCE_INSUFFICIENT: "포인트가 부족합니다. 칭호 구매에는 500 P가 필요합니다.",
+  TITLE_ALREADY_OWNED: "이미 소장한 칭호입니다.",
+  TITLE_REQUEST_CONFLICT: "요청 상태가 변경되었습니다. 다시 불러온 뒤 시도해 주세요.",
+  TITLE_SYNC_PENDING: "먼저 대기 중인 Discord 역할 적용을 완료해 주세요.",
+
   GUILD_MEMBER_REQUIRED: "게임 프로필은 대상 Discord 서버 멤버만 이용할 수 있습니다.",
   GUILD_MEMBERSHIP_UNAVAILABLE:
     "Discord 서버 멤버 여부를 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.",

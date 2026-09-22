@@ -1,4 +1,6 @@
 export {
+  readConfirmedPointBalance,
+  spendTitlePoints,
   awardOfficialCompletionPoints,
   getCompletionPointSummary,
   getConfirmedPointBalance,

@@ -8,6 +8,7 @@ type PointsPanelState =
   { status: "loading" } | { status: "ready"; data: PointOverviewData } | { status: "error" };
 
 const reasonLabels = {
+  TITLE_PURCHASE: "칭호 구매",
   NUMBER_CLICK_COMPLETION: "숫자 순서대로 누르기 공식 완료",
   GAME_RECORD_INVALIDATION: "공식 기록 무효화 회수",
 } as const;
@@ -19,6 +20,12 @@ function formatPoints(value: number): string {
 export function PointsPanel() {
   const [state, setState] = useState<PointsPanelState>({ status: "loading" });
   const [requestVersion, setRequestVersion] = useState(0);
+
+  useEffect(() => {
+    const refresh = () => setRequestVersion((version) => version + 1);
+    window.addEventListener("jgd:points-changed", refresh);
+    return () => window.removeEventListener("jgd:points-changed", refresh);
+  }, []);
 
   useEffect(() => {
     let active = true;
